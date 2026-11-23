@@ -16,6 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 @font-face{font-family:'MyFont';src:url('./MyFont.ttf.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+@font-face{font-family:'MyFont';src:url('./MyFontNumbers.ttf') format('truetype');unicode-range:U+30-39;font-weight:normal;font-style:normal;font-display:swap}
 :root{--bg:#18121b;--card:#251b29;--ink:#fff0f6;--mute:#d4a5ba;--line:#3d2944;--pink:#ff9ec4;--pinkbg:#3b1e30;--mint:#f7b2cd;--mintbg:#331a29;--btn:#ff9ec4;--btntxt:#1b0f18;color-scheme:dark;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 :root[data-theme="light"]{--bg:#fff5f9;--card:#ffffff;--ink:#361c2c;--mute:#8f5e76;--line:#f5d0e0;--pink:#ff85b3;--pinkbg:#ffe4ef;--mint:#ff9ec4;--mintbg:#fff0f6;--btn:#ff7aa8;--btntxt:#ffffff;color-scheme:light}
@@ -88,11 +89,18 @@ details .row{margin-top:12px}
 .dot-other{background:#c8b6ff}
 .mark-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--pinkbg);color:var(--ink);margin-right:6px}
 select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:9px 10px}
+.cal-card-art{position:relative;overflow:hidden}
+.cal-card-art.has-cal-bg{background-image:var(--cal-bg);background-size:cover;background-position:center;background-repeat:no-repeat}
+.cal-card-art.has-cal-bg::before{content:"";position:absolute;inset:0;background:rgba(24,18,27,.62);pointer-events:none;z-index:0}
+.cal-card-art > *{position:relative;z-index:1}
+.cal-card-art.has-cal-bg .cal-day{background:rgba(24,18,27,.45)}
+.cal-card-art.has-cal-bg .cal-day.selected{background:rgba(255,158,196,.28)}
+.bottom-install{margin-top:16px}
 </style>
 </head>
 <body>
 <main>
-<header><div class="logo" id="logo">⏰</div><h1 id="appName" style="flex:1">Reyan’s Tiem Manager</h1><div class="top-actions"><button class="cal-btn" id="viewSwitchBtn" aria-label="Switch to Calendar">Calendar</button><button class="ghost" id="installBtn" style="display:none;padding:8px 12px;font-size:13px">Install App</button></div></header>
+<header><div class="logo" id="logo">⏰</div><h1 id="appName" style="flex:1">Reyan’s Tiem Manager</h1><div class="top-actions"><button class="cal-btn" id="viewSwitchBtn" aria-label="Switch to Calendar">Calendar</button></div></header>
 <div class="pager" id="pager">
 <div class="pager-track" id="pagerTrack">
 <section class="page" id="tiemPage" aria-label="Tiem Manager">
@@ -131,10 +139,13 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 </div>
 <p class="date" style="margin-top:12px">Alarms and morning/bedtime/meal nudges work while this page is open in a tab, on your Home Screen, or via notifications when allowed. Keep the sound on.</p>
 </details>
+<div class="bottom-install" id="bottomInstallWrap">
+<button class="ghost" id="bottomInstallBtn" style="width:100%">Install App</button>
+</div>
 </section>
 
 <section class="page" id="calPage" aria-label="Calendar">
-<div class="card" style="margin-top:16px">
+<div class="card cal-card-art" id="calCard" style="margin-top:16px">
 <div class="cal-head">
 <button class="ghost" id="prevMonth" aria-label="Previous month">‹</button>
 <h2 class="cal-title" id="calMonthLabel">Month</h2>
@@ -173,7 +184,7 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 var KEY='tinytime.v1';
 var TZ='Asia/Manila';
 /* OWNER-ONLY DESIGN: name, logo and alarm sound are set here by the owner. Users cannot change them. */
-var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./clock.png',sound:''};
+var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./clock.png',calBg:'./cal-bg.png',sound:''};
 var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5};
 try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
 if(S.name==='Tiny Tiem')S.name='Reyan’s Tiem Manager';
@@ -481,7 +492,7 @@ function renderSelectedMarks(){
   }
   listEl.innerHTML = marks.map(function(mk, idx){
     var typeLabel = mk.type === 'monthsary' ? 'Monthsary' : mk.type === 'birthday' ? 'Birthday' : mk.type === 'holiday' ? 'Holiday' : 'Special Tiem';
-    return '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">' + esc(typeLabel) + '</span><b>' + esc(mk.label || typeLabel) + '</b></div><button class="icon" data-del-mark="' + idx + '" aria-label="Remove mark">✕</button></div>';
+    return '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">' + esc(typeLabel) + '</span><b>' + esc(autoCorrectCalText(mk.label || typeLabel)) + '</b></div><button class="icon" data-del-mark="' + idx + '" aria-label="Remove mark">✕</button></div>';
   }).join('');
 }
 
@@ -501,10 +512,30 @@ if ($('calGrid')) {
     renderCalendar();
   });
 }
+function autoCorrectCalText(str){
+  if (!str) return '';
+  return str
+    .replace(/\bmonthsary\b/gi, 'monthsari')
+    .replace(/\banniversary\b/gi, 'anniversarii')
+    .replace(/\bchrismas\b/gi, 'xmas')
+    .replace(/\bchristmas\b/gi, 'xmas')
+    .replace(/\bnew year\b/gi, 'new yr');
+}
+
+/* Optional: if you upload a calendar background PNG (e.g. ./cal-bg.png) to GitHub, set BRAND.calBg to './cal-bg.png' */
+if (typeof BRAND !== 'undefined' && BRAND.calBg) {
+  var calCardEl = $('calCard');
+  if (calCardEl) {
+    calCardEl.style.setProperty('--cal-bg', "url('" + BRAND.calBg + "')");
+    calCardEl.classList.add('has-cal-bg');
+  }
+}
+
 if ($('saveMarkBtn')) {
   $('saveMarkBtn').onclick = function(){
     var cat = $('markCategory') ? $('markCategory').value : 'other';
-    var lbl = $('markLabel') ? $('markLabel').value.trim() : '';
+    var rawLbl = $('markLabel') ? $('markLabel').value.trim() : '';
+    var lbl = autoCorrectCalText(rawLbl || cat);
     if (!S.calMarks[selectedIso]) S.calMarks[selectedIso] = [];
     S.calMarks[selectedIso].push({ type: cat, label: lbl || cat });
     if ($('markLabel')) $('markLabel').value = '';
@@ -530,25 +561,36 @@ applyBrand();render();renderCalendar();check();
 
 /* ---- PWA install & offline service worker ---- */
 var deferredPrompt=null;
+function isStandaloneApp(){
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+}
+function syncBottomInstall(){
+  var wrap=$('bottomInstallWrap');
+  if(wrap)wrap.style.display=isStandaloneApp()?'none':'block';
+}
+syncBottomInstall();
 window.addEventListener('beforeinstallprompt',function(e){
   e.preventDefault();
   deferredPrompt=e;
-  var btn=$('installBtn');
-  if(btn)btn.style.display='inline-block';
+  syncBottomInstall();
 });
-if($('installBtn')){
-  $('installBtn').onclick=function(){
-    if(!deferredPrompt)return;
+function triggerInstall(){
+  if(deferredPrompt){
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(function(){
       deferredPrompt=null;
-      $('installBtn').style.display='none';
+      syncBottomInstall();
     });
-  };
+  } else {
+    alert('To install: on Android/Windows tap your browser menu (⋮ or ...) and choose "Install app" or "Add to Home Screen"; on iPhone Safari tap Share then "Add to Home Screen".');
+  }
+}
+if($('bottomInstallBtn')){
+  $('bottomInstallBtn').onclick=triggerInstall;
 }
 window.addEventListener('appinstalled',function(){
   deferredPrompt=null;
-  if($('installBtn'))$('installBtn').style.display='none';
+  syncBottomInstall();
 });
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
