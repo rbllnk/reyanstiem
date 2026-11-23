@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reyan-tiem-v1';
+const CACHE_NAME = 'reyan-tiem-v20';
 const ASSETS = [
   './',
   './index.html',
@@ -28,45 +28,33 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
-  );
-});
-
-self.addEventListener('push', (event) => {
-  let data = {
-    title: 'Reyan’s Tiem Manager',
-    body: 'Time check! Open your tiem list.',
-    url: './'
-  };
-
-  if (event.data) {
-    try {
-      const parsed = event.data.json();
-      data = Object.assign(data, parsed);
-    } catch (e) {
-      data.body = event.data.text() || data.body;
-    }
-  }
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: './logo.png',
-      badge: './logo.png',
-      data: { url: data.url || './' }
-    })
+    fetch(event.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || './';
+  const action = event.action || 'open';
+  const alarmId = (event.notification && event.notification.data && event.notification.data.alarmId) || '';
+  if (event.notification) event.notification.close();
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      const msgType = action === 'snooze' ? 'snooze' : 'stop';
       for (const client of clientList) {
-        if ('focus' in client) return client.focus();
+        client.postMessage({ type: 'ALARM_ACTION', action: msgType, alarmId });
       }
-      if (clients.openWindow) return clients.openWindow(targetUrl);
+      if (action === 'open' && clientList.length > 0) {
+        return clientList[0].focus();
+      }
+      if (action === 'open' && self.clients.openWindow) {
+        return self.clients.openWindow('./');
+      }
     })
   );
 });
