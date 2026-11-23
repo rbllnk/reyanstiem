@@ -170,9 +170,9 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <option value="monthsary">Monthsary</option>
 <option value="birthday">Birthday</option>
 <option value="holiday">Holiday</option>
-<option value="other">Special Tiem</option>
+<option value="other">Day Plan</option>
 </select>
-<input type="text" id="markLabel" placeholder="Label (e.g. 14th monthsary, Reyan’s bday)" maxlength="80">
+<input type="text" id="markLabel" placeholder="e.g. Science 10-12am, English 3pm" maxlength="80">
 <button id="saveMarkBtn">Mark</button>
 </div>
 <div id="selectedDateMarks" style="margin-top:12px"></div>
@@ -610,9 +610,12 @@ function renderCalendar(){
       var t = mk.type || 'other';
       return '<span class="dot dot-' + t + '"></span>';
     }).join('');
+    var allDayLabels = [];
+    wLabels.forEach(function(wl){ allDayLabels.push(wl); });
+    marks.forEach(function(mk){ allDayLabels.push(autoCorrectCalText(mk.label || mk.type || '')); });
     var cellLabelText = '';
-    if (marks.length) cellLabelText = autoCorrectCalText(marks[0].label || '');
-    else if (wLabels.length) cellLabelText = wLabels[0];
+    if (allDayLabels.length === 1) cellLabelText = allDayLabels[0];
+    else if (allDayLabels.length > 1) cellLabelText = allDayLabels[0] + ' (+' + (allDayLabels.length - 1) + ')';
     var lblHtml = cellLabelText ? '<span class="cal-lbl">' + esc(cellLabelText) + '</span>' : '';
     htmlOut += '<button type="button" class="cal-day' + cls.slice(7) + '" data-iso="' + iso + '">' + d + lblHtml + '<span class="dots">' + dotsHtml + '</span></button>';
   }
@@ -638,22 +641,22 @@ function renderSelectedMarks(){
   var p = selectedIso.split('-');
   var selDow = new Date(+p[0], (+p[1]) - 1, +p[2]).getDay();
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  titleEl.textContent = dayNames[selDow] + ' · ' + selectedIso;
+  titleEl.textContent = dayNames[selDow] + ' · ' + selectedIso + ' — Whole Day Plan';
   var marks = S.calMarks[selectedIso] || [];
   var wLabels = S.weeklyLabels[String(selDow)] || [];
   var itemsHtml = '';
-  wLabels.forEach(function(wl){
-    itemsHtml += '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">Every ' + dayNames[selDow] + '</span><b>' + esc(wl) + '</b></div></div>';
+  wLabels.forEach(function(wl, wIdx){
+    itemsHtml += '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">Every ' + dayNames[selDow] + '</span><b>' + esc(wl) + '</b></div><button class="icon" data-del-week="' + selDow + ':' + wIdx + '" aria-label="Remove weekly plan">✕</button></div>';
   });
   marks.forEach(function(mk, idx){
-    var typeLabel = mk.type === 'monthsary' ? 'Monthsary' : mk.type === 'birthday' ? 'Birthday' : mk.type === 'holiday' ? 'Holiday' : 'Special Tiem';
+    var typeLabel = mk.type === 'monthsary' ? 'Monthsary' : mk.type === 'birthday' ? 'Birthday' : mk.type === 'holiday' ? 'Holiday' : mk.type === 'other' ? 'Day Plan' : mk.type;
     itemsHtml += '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">' + esc(typeLabel) + '</span><b>' + esc(autoCorrectCalText(mk.label || typeLabel)) + '</b></div><button class="icon" data-del-mark="' + idx + '" aria-label="Remove mark">✕</button></div>';
   });
   if (!itemsHtml) {
-    listEl.innerHTML = '<div class="empty" style="padding:6px">No marks or class labels on this day yet.</div>';
-    return;
+    listEl.innerHTML = '<div class="empty" style="padding:6px">Nothing planned for this day yet. Add a class or plan above!</div>';
+  } else {
+    listEl.innerHTML = itemsHtml;
   }
-  listEl.innerHTML = itemsHtml;
   renderWeeklyLabels();
 }
 
@@ -753,6 +756,18 @@ if ($('saveMarkBtn')) {
 }
 if ($('selectedDateMarks')) {
   $('selectedDateMarks').addEventListener('click', function(e){
+    var delWeek = e.target.closest('[data-del-week]');
+    if (delWeek) {
+      var parts = delWeek.dataset.delWeek.split(':');
+      var k = parts[0], idx = +parts[1];
+      if (S.weeklyLabels && S.weeklyLabels[k]) {
+        S.weeklyLabels[k].splice(idx, 1);
+        if (!S.weeklyLabels[k].length) delete S.weeklyLabels[k];
+        save();
+        renderCalendar();
+      }
+      return;
+    }
     var delBtn = e.target.closest('[data-del-mark]');
     if (!delBtn) return;
     var i = +delBtn.dataset.delMark;
