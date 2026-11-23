@@ -636,6 +636,10 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(function(){});
   });
 }
+  window.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('input, textarea').forEach(function(el){
+    if (el.placeholder) el.placeholder = el.placeholder.replace(/\bcute\s+/gi, '');
+  });
 </script>
 </body>
 </html>
