@@ -95,6 +95,11 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 .cal-art-banner img{display:block;width:100%;max-height:240px;object-fit:contain;background:#fff}
 .cal-card-art.has-cal-bg .cal-day{background:var(--bg)}
 .cal-card-art.has-cal-bg .cal-day.selected{background:var(--pinkbg)}
+.cal-day{min-height:58px;justify-content:flex-start;padding:5px 2px}
+.cal-lbl{display:block;width:100%;font:600 9px/1.15 'MyFont',Nunito,sans-serif;color:var(--pink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;padding:0 2px}
+.cal-day.muted .cal-lbl{opacity:.6}
+.week-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.week-item:first-child{border-top:0}
 .bottom-install{margin-top:16px}
 </style>
 </head>
@@ -130,6 +135,8 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 
 
 
+<div class="row"><label>Ringtone <select class="mark-type" id="sTone" aria-label="Ringtone"><option value="chime">Soft Music Box</option><option value="bell">Gentle Bell</option><option value="marimba">Cozy Marimba</option><option value="classic">Classic Beep</option><option value="custom">Custom Audio File</option></select></label></div>
+<div class="row" id="customToneRow" style="display:none"><label>Upload ringtone (.mp3/.wav) <input type="file" id="sToneFile" accept="audio/*"></label></div>
 <div class="row"><label>Snooze minutes <input type="number" id="sSnooze" min="1" max="60" style="width:80px"></label></div>
 <div class="row"><label>Heads-up before alarm (minutes, 0 = off) <input type="number" id="sLead" min="0" max="60" style="width:80px"></label></div>
 <div class="row">
@@ -169,6 +176,24 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <button id="saveMarkBtn">Mark</button>
 </div>
 <div id="selectedDateMarks" style="margin-top:12px"></div>
+</div>
+
+<div class="card">
+<h3 style="margin:0 0 10px;font:600 18px 'MyFont',Fredoka,sans-serif">Weekly Day Labels</h3>
+<div class="row">
+<select class="mark-type" id="weekDaySelect" aria-label="Day of week">
+<option value="1">Monday</option>
+<option value="2">Tuesday</option>
+<option value="3">Wednesday</option>
+<option value="4">Thursday</option>
+<option value="5">Friday</option>
+<option value="6">Saturday</option>
+<option value="0">Sunday</option>
+</select>
+<input type="text" id="weekDayLabel" placeholder="e.g. PATHFIT 7am-9am" maxlength="80">
+<button id="saveWeekLabelBtn">Add</button>
+</div>
+<div id="weeklyLabelsList" style="margin-top:12px"></div>
 </div>
 </section>
 </div>
@@ -239,14 +264,53 @@ $('fText').value='';$('fNote').value='';save();render();
 };
 
 /* ---- alarm ---- */
-var ac,beepTimer,audio,queue=[],ringing=null;
+var ac,beepTimer,vibTimer,audio,queue=[],ringing=null;
 function unlock(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume()}catch(e){}}
-function beep(){if(!ac)return;[0,.25,.5].forEach(function(o){var s=ac.createOscillator(),g=ac.createGain();s.type='sine';s.frequency.value=880;g.gain.setValueAtTime(.0001,ac.currentTime+o);g.gain.exponentialRampToValueAtTime(.4,ac.currentTime+o+.02);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+o+.18);s.connect(g);g.connect(ac.destination);s.start(ac.currentTime+o);s.stop(ac.currentTime+o+.2)})}
+function playNotes(notes,wave,dur){
+if(!ac)return;
+notes.forEach(function(n){
+var s=ac.createOscillator(),g=ac.createGain();
+s.type=wave||'sine';
+s.frequency.value=n[0];
+var t0=ac.currentTime+n[1];
+var d=n[2]||dur||0.28;
+g.gain.setValueAtTime(0.0001,t0);
+g.gain.exponentialRampToValueAtTime(0.45,t0+0.02);
+g.gain.exponentialRampToValueAtTime(0.0001,t0+d);
+s.connect(g);g.connect(ac.destination);
+s.start(t0);s.stop(t0+d+0.02);
+});
+}
+function beep(){
+var tone=S.tone||'chime';
+if(tone==='bell'){
+playNotes([[659.25,0,0.45],[880,0.35,0.55],[1318.5,0.75,0.7]],'sine',0.5);
+}else if(tone==='marimba'){
+playNotes([[523.25,0,0.22],[659.25,0.2,0.22],[783.99,0.4,0.22],[1046.5,0.6,0.35]],'triangle',0.25);
+}else if(tone==='classic'){
+playNotes([[880,0,0.18],[880,0.25,0.18],[880,0.5,0.18]],'sine',0.18);
+}else{
+playNotes([[587.33,0,0.32],[739.99,0.28,0.32],[880,0.56,0.36],[1174.66,0.86,0.5]],'sine',0.35);
+}
+}
 function startSound(){stopSound();
-if(BRAND.sound){audio=new Audio(BRAND.sound);audio.loop=true;audio.play().catch(function(){});}
-else{beep();beepTimer=setInterval(beep,1500)}
-if(navigator.vibrate)navigator.vibrate([300,150,300]);}
-function stopSound(){clearInterval(beepTimer);if(audio){audio.pause();audio=null}}
+var src=(S.tone==='custom'&&S.customSound)?S.customSound:BRAND.sound;
+if(src){
+audio=new Audio(src);audio.loop=true;
+audio.play().catch(function(){beep();beepTimer=setInterval(beep,1800)});
+}else{
+beep();beepTimer=setInterval(beep,1800);
+}
+if(navigator.vibrate){
+navigator.vibrate([400,200,400]);
+vibTimer=setInterval(function(){if(ringing&&navigator.vibrate)navigator.vibrate([400,200,400])},2000);
+}
+}
+function stopSound(){
+clearInterval(beepTimer);clearInterval(vibTimer);
+if(audio){audio.pause();audio.currentTime=0;audio=null}
+if(navigator.vibrate)navigator.vibrate(0);
+}
 
 function ring(t){
 queue.push(t);if(!ringing)next();
@@ -282,6 +346,33 @@ if(now.getSeconds()===0)tickNext();
 setInterval(check,1000);
 
 /* ---- settings ---- */
+S.tone=S.tone||'chime';
+S.customSound=S.customSound||'';
+if($('sTone')){
+  $('sTone').value=S.tone;
+  if($('customToneRow'))$('customToneRow').style.display=(S.tone==='custom')?'flex':'none';
+  $('sTone').onchange=function(){
+    S.tone=$('sTone').value;
+    if($('customToneRow'))$('customToneRow').style.display=(S.tone==='custom')?'flex':'none';
+    save();
+    unlock();beep();
+  };
+}
+if($('sToneFile')){
+  $('sToneFile').onchange=function(e){
+    var file=e.target.files&&e.target.files[0];
+    if(!file)return;
+    var r=new FileReader();
+    r.onload=function(){
+      S.customSound=r.result;
+      S.tone='custom';
+      if($('sTone'))$('sTone').value='custom';
+      save();
+      unlock();startSound();setTimeout(stopSound,2500);
+    };
+    r.readAsDataURL(file);
+  };
+}
 $('sSnooze').value=S.snooze;$('sLead').value=S.lead;
 
 $('sSnooze').onchange=function(){S.snooze=Math.max(1,Math.min(60,+$('sSnooze').value||5));save()};
@@ -506,9 +597,12 @@ function renderCalendar(){
     htmlOut += '<button type="button" class="cal-day muted" data-iso="' + pIso + '">' + pd + '</button>';
   }
 
+  S.weeklyLabels = S.weeklyLabels || {};
   for (var d = 1; d <= daysInMonth; d++) {
     var iso = isoFromYMD(y, m, d);
+    var dow = new Date(y, m, d).getDay();
     var marks = S.calMarks[iso] || [];
+    var wLabels = S.weeklyLabels[String(dow)] || [];
     var cls = 'cal-day';
     if (iso === todayIso) cls += ' today';
     if (iso === selectedIso) cls += ' selected';
@@ -516,7 +610,11 @@ function renderCalendar(){
       var t = mk.type || 'other';
       return '<span class="dot dot-' + t + '"></span>';
     }).join('');
-    htmlOut += '<button type="button" class="cal-day' + cls.slice(7) + '" data-iso="' + iso + '">' + d + '<span class="dots">' + dotsHtml + '</span></button>';
+    var cellLabelText = '';
+    if (marks.length) cellLabelText = autoCorrectCalText(marks[0].label || '');
+    else if (wLabels.length) cellLabelText = wLabels[0];
+    var lblHtml = cellLabelText ? '<span class="cal-lbl">' + esc(cellLabelText) + '</span>' : '';
+    htmlOut += '<button type="button" class="cal-day' + cls.slice(7) + '" data-iso="' + iso + '">' + d + lblHtml + '<span class="dots">' + dotsHtml + '</span></button>';
   }
 
   var totalCells = firstDow + daysInMonth;
@@ -536,16 +634,70 @@ function renderSelectedMarks(){
   var titleEl = $('selectedDateTitle');
   var listEl = $('selectedDateMarks');
   if (!titleEl || !listEl) return;
-  titleEl.textContent = 'Marks for ' + selectedIso;
+  S.weeklyLabels = S.weeklyLabels || {};
+  var p = selectedIso.split('-');
+  var selDow = new Date(+p[0], (+p[1]) - 1, +p[2]).getDay();
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  titleEl.textContent = dayNames[selDow] + ' · ' + selectedIso;
   var marks = S.calMarks[selectedIso] || [];
-  if (!marks.length) {
-    listEl.innerHTML = '<div class="empty" style="padding:6px">No marks on this date yet. Add a monthsary, birthday, or holiday above.</div>';
+  var wLabels = S.weeklyLabels[String(selDow)] || [];
+  var itemsHtml = '';
+  wLabels.forEach(function(wl){
+    itemsHtml += '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">Every ' + dayNames[selDow] + '</span><b>' + esc(wl) + '</b></div></div>';
+  });
+  marks.forEach(function(mk, idx){
+    var typeLabel = mk.type === 'monthsary' ? 'Monthsary' : mk.type === 'birthday' ? 'Birthday' : mk.type === 'holiday' ? 'Holiday' : 'Special Tiem';
+    itemsHtml += '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">' + esc(typeLabel) + '</span><b>' + esc(autoCorrectCalText(mk.label || typeLabel)) + '</b></div><button class="icon" data-del-mark="' + idx + '" aria-label="Remove mark">✕</button></div>';
+  });
+  if (!itemsHtml) {
+    listEl.innerHTML = '<div class="empty" style="padding:6px">No marks or class labels on this day yet.</div>';
     return;
   }
-  listEl.innerHTML = marks.map(function(mk, idx){
-    var typeLabel = mk.type === 'monthsary' ? 'Monthsary' : mk.type === 'birthday' ? 'Birthday' : mk.type === 'holiday' ? 'Holiday' : 'Special Tiem';
-    return '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">' + esc(typeLabel) + '</span><b>' + esc(autoCorrectCalText(mk.label || typeLabel)) + '</b></div><button class="icon" data-del-mark="' + idx + '" aria-label="Remove mark">✕</button></div>';
-  }).join('');
+  listEl.innerHTML = itemsHtml;
+  renderWeeklyLabels();
+}
+
+function renderWeeklyLabels(){
+  var box = $('weeklyLabelsList');
+  if (!box) return;
+  S.weeklyLabels = S.weeklyLabels || {};
+  var order = ['1','2','3','4','5','6','0'];
+  var names = {'1':'Monday','2':'Tuesday','3':'Wednesday','4':'Thursday','5':'Friday','6':'Saturday','0':'Sunday'};
+  var out = [];
+  order.forEach(function(k){
+    (S.weeklyLabels[k] || []).forEach(function(txt, idx){
+      out.push('<div class="week-item"><div><span class="mark-badge">' + names[k] + '</span><b>' + esc(txt) + '</b></div><button class="icon" data-del-week="' + k + ':' + idx + '" aria-label="Remove weekly label">✕</button></div>');
+    });
+  });
+  box.innerHTML = out.length ? out.join('') : '<div class="empty" style="padding:6px">No weekly labels yet (e.g. Monday: PATHFIT 7am-9am).</div>';
+}
+
+if ($('saveWeekLabelBtn')) {
+  $('saveWeekLabelBtn').onclick = function(){
+    var dow = $('weekDaySelect') ? $('weekDaySelect').value : '1';
+    var txt = $('weekDayLabel') ? $('weekDayLabel').value.trim() : '';
+    if (!txt) { if ($('weekDayLabel')) $('weekDayLabel').focus(); return; }
+    S.weeklyLabels = S.weeklyLabels || {};
+    if (!S.weeklyLabels[dow]) S.weeklyLabels[dow] = [];
+    S.weeklyLabels[dow].push(txt);
+    if ($('weekDayLabel')) $('weekDayLabel').value = '';
+    save();
+    renderCalendar();
+  };
+}
+if ($('weeklyLabelsList')) {
+  $('weeklyLabelsList').addEventListener('click', function(e){
+    var b = e.target.closest('[data-del-week]');
+    if (!b) return;
+    var parts = b.dataset.delWeek.split(':');
+    var k = parts[0], idx = +parts[1];
+    if (S.weeklyLabels && S.weeklyLabels[k]) {
+      S.weeklyLabels[k].splice(idx, 1);
+      if (!S.weeklyLabels[k].length) delete S.weeklyLabels[k];
+      save();
+      renderCalendar();
+    }
+  });
 }
 
 if ($('prevMonth')) {
