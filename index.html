@@ -10,12 +10,12 @@
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef0fb">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#16152b">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./logo.png">
+<link rel="apple-touch-icon" href="./logo.png">
 <title>Reyan’s Tiem Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-@font-face{font-family:'MyFont';src:url('./Myfont.ttf.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+@font-face{font-family:'MyFont';src:url('./MyFont.ttf.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
 :root{--bg:#18121b;--card:#251b29;--ink:#fff0f6;--mute:#d4a5ba;--line:#3d2944;--pink:#ff9ec4;--pinkbg:#3b1e30;--mint:#f7b2cd;--mintbg:#331a29;--btn:#ff9ec4;--btntxt:#1b0f18;color-scheme:dark;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 :root[data-theme="light"]{--bg:#fff5f9;--card:#ffffff;--ink:#361c2c;--mute:#8f5e76;--line:#f5d0e0;--pink:#ff85b3;--pinkbg:#ffe4ef;--mint:#ff9ec4;--mintbg:#fff0f6;--btn:#ff7aa8;--btntxt:#ffffff;color-scheme:light}
@@ -64,22 +64,41 @@ details .row{margin-top:12px}
 .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .pill{background:var(--pinkbg);color:var(--ink);border-radius:12px;padding:8px 12px;font-size:13px;flex:1 1 140px}
 .pill small{display:block;color:var(--mute);font-size:12px}
+.top-actions{display:flex;gap:8px;align-items:center}
+.cal-btn{background:var(--pinkbg);color:var(--pink);border:1px solid var(--line);padding:8px 12px;border-radius:12px;font:600 13px 'MyFont',Nunito,sans-serif;cursor:pointer;white-space:nowrap}
+.pager{overflow:hidden;width:100%}
+.pager-track{display:flex;width:200%;transform:translateX(0%);transition:transform .36s cubic-bezier(.22,1,.36,1);will-change:transform}
+.pager-track.show-cal{transform:translateX(-50%)}
+.page{width:50%;flex:0 0 50%;padding-right:2px}
+@media (prefers-reduced-motion:reduce){.pager-track{transition:none}}
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.cal-title{font:600 20px 'MyFont',Fredoka,sans-serif;margin:0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.cal-dow{font-size:12px;color:var(--mute);padding:4px 0}
+.cal-day{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:12px;min-height:46px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);font:600 14px 'MyFont',Nunito,sans-serif;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.cal-day:active{transform:scale(.95)}
+.cal-day.muted{opacity:.35}
+.cal-day.today{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink)}
+.cal-day.selected{background:var(--pinkbg);border-color:var(--pink)}
+.dots{display:flex;gap:3px;margin-top:3px;min-height:6px;align-items:center;justify-content:center}
+.dot{width:6px;height:6px;border-radius:999px;display:inline-block}
+.dot-monthsary{background:#ff9ec4}
+.dot-birthday{background:#ffd166}
+.dot-holiday{background:#7bdff2}
+.dot-other{background:#c8b6ff}
+.mark-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--pinkbg);color:var(--ink);margin-right:6px}
+select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:9px 10px}
 </style>
 </head>
 <body>
 <main>
-<header><div class="logo" id="logo">⏰</div><h1 id="appName" style="flex:1">Reyan’s Tiem Manager</h1><button class="ghost" id="installBtn" style="display:none;padding:8px 12px;font-size:13px">Install App</button></header>
+<header><div class="logo" id="logo">⏰</div><h1 id="appName" style="flex:1">Reyan’s Tiem Manager</h1><div class="top-actions"><button class="cal-btn" id="viewSwitchBtn" aria-label="Switch to Calendar">Calendar</button><button class="ghost" id="installBtn" style="display:none;padding:8px 12px;font-size:13px">Install App</button></div></header>
+<div class="pager" id="pager">
+<div class="pager-track" id="pagerTrack">
+<section class="page" id="tiemPage" aria-label="Tiem Manager">
 <div class="clock" id="clock">--:--</div>
 <div class="date" id="date"></div>
 <div class="next" id="next"></div>
-<div class="gentle" id="dailyBanner">
-<h3 id="dailyTitle">Today’s Tiem Note</h3>
-<p id="dailyMsg"></p>
-<div class="pill-row">
-<div class="pill"><small>Good tiem to eat</small><span id="mealHint">--</span></div>
-<div class="pill"><small>Sleep & rest tiem</small><span id="sleepHint">--</span></div>
-</div>
-</div>
 
 <div class="card">
 <div class="row">
@@ -110,11 +129,38 @@ details .row{margin-top:12px}
 <button class="ghost" id="test">Test alarm</button>
 
 </div>
-<div class="row"><label>Morning motivation tiem <input type="time" id="sMornTime" value="07:30"></label></div>
-<div class="row"><label>Bedtime reminder tiem <input type="time" id="sBedTime" value="22:30"></label></div>
-<div class="row"><label>Breakfast / Lunch / Dinner <input type="time" id="sMeal1" value="08:00"> <input type="time" id="sMeal2" value="12:30"> <input type="time" id="sMeal3" value="19:00"></label></div>
 <p class="date" style="margin-top:12px">Alarms and morning/bedtime/meal nudges work while this page is open in a tab, on your Home Screen, or via notifications when allowed. Keep the sound on.</p>
 </details>
+</section>
+
+<section class="page" id="calPage" aria-label="Calendar">
+<div class="card" style="margin-top:16px">
+<div class="cal-head">
+<button class="ghost" id="prevMonth" aria-label="Previous month">‹</button>
+<h2 class="cal-title" id="calMonthLabel">Month</h2>
+<button class="ghost" id="nextMonth" aria-label="Next month">›</button>
+</div>
+<div class="cal-grid" id="calGrid"></div>
+<p class="date" style="margin:10px 0 0;font-size:12px">Swipe right to go back to tiem manager · Tap a date to add marks</p>
+</div>
+
+<div class="card">
+<h3 id="selectedDateTitle" style="margin:0 0 10px;font:600 18px 'MyFont',Fredoka,sans-serif">Selected Date</h3>
+<div class="row">
+<select class="mark-type" id="markCategory" aria-label="Mark type">
+<option value="monthsary">Monthsary</option>
+<option value="birthday">Birthday</option>
+<option value="holiday">Holiday</option>
+<option value="other">Special Tiem</option>
+</select>
+<input type="text" id="markLabel" placeholder="Label (e.g. 14th monthsary, Reyan’s bday)" maxlength="80">
+<button id="saveMarkBtn">Mark</button>
+</div>
+<div id="selectedDateMarks" style="margin-top:12px"></div>
+</div>
+</section>
+</div>
+</div>
 </main>
 
 <div id="ring" role="alertdialog" aria-live="assertive"><div class="box">
@@ -127,7 +173,7 @@ details .row{margin-top:12px}
 var KEY='tinytime.v1';
 var TZ='Asia/Manila';
 /* OWNER-ONLY DESIGN: name, logo and alarm sound are set here by the owner. Users cannot change them. */
-var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./icons/clock.png',sound:''};
+var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./clock.png',sound:''};
 var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5};
 try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
 if(S.name==='Tiny Tiem')S.name='Reyan’s Tiem Manager';
@@ -234,181 +280,253 @@ $('test').onclick=function(){unlock();ring({id:'test',text:'Test alarm',note:'Th
 document.addEventListener('click',unlock,{once:true});
 
 
-var PRAISE_MSGS=[
+var SURPRISE_ALL_DONE=[
   'you finished every single tiem on today’s list—so proud of you! taek a deep breath, rest, nd doomscroll na bozz',
   'all scheduled tiems complete! u showed up for urself today, nd that deserves ril rest. mwa',
   'everything on ur list is checked off! relax without guilt. :)'
 ];
-var ADD_MORE_MSGS=[
+var SURPRISE_EMPTY=[
   'ur schedule is quiet right now... whenever you’re ready, add a gentle tiem or a smol cozy goal.',
   'nothing on the board yet! gou drink watur, stretch, or plan 1 little thing u want to do.',
   'blank canvas for your tiem today... add a reminder wehnever sumthing comes up so yew dont havb to hold it in ur head'
 ];
-var IN_PROGRESS_MSGS=[
-  'youre doing better than u think todie... am so proud of u',
-  'even smol progress counts on a busy tiem.',
-  'yew dont hab to rush vrything at once... jus focus on da next tiem ahead.'
-];
-var MORNING_MOTIVATIONS=[
+var SURPRISE_MORNING=[
   'gud morningg! taek it slow, drink sum watur, nd be kind to yourself todie.. i love youu',
   'guddmoringg! youve got dis.',
   'gudd morningg! start w waht feels manageable first nd protect ur peace thry da day.'
 ];
-var BEDTIME_NUDGES=[
+var SURPRISE_MEAL=[
+  'gud tiem to eat—dont skip meals nd eatwhaell',
+  'food check! grab sumthing warm nd take ur tiem eating.'
+];
+var SURPRISE_NIGHT=[
   'sleep reminder: screens down soon bozz... let ur body rest for tomorrow’s tiem.',
   'slep tiem check... doomscroll, stretch a little, nd get sum rest so u wake up lighter.'
 ];
-var RANDOM_DAILY_NOTE='wag k n magpa generaet kai chatgpt ng shed mu';
+var SURPRISE_PROGRESS=[
+  'youre doing better than u think todie... am so proud of u',
+  'even smol progress counts on a busy tiem.',
+  'yew dont hab to rush vrything at once... jus focus on da next tiem ahead.'
+];
+var DAILY_SURPRISE_LINE='wag k n magpa generaet kai chatgpt ng shed mu';
 
-S.mornTime = S.mornTime || '07:30';
-S.bedTime  = S.bedTime  || '22:30';
-S.meals    = Array.isArray(S.meals) && S.meals.length===3 ? S.meals : ['08:00','12:30','19:00'];
-S.lastMorn = S.lastMorn || '';
-S.lastBed  = S.lastBed  || '';
-S.lastMeal = S.lastMeal || '';
+S.calMarks = S.calMarks || {};
+S.lastAutoSurprise = S.lastAutoSurprise || '';
 
-function daySeed(d){
+function tiemSeed(d){
   var k = dayKey(d);
-  var sum = 0;
-  for (var i=0; i<k.length; i++) sum += k.charCodeAt(i);
-  return sum;
+  var s = 0;
+  for (var i=0; i<k.length; i++) s += k.charCodeAt(i);
+  return s;
 }
 
-function updateDailyBanner(){
-  var now = new Date();
-  var seed = daySeed(now);
+function getSurpriseByTiem(now){
+  var parts = hm(now).split(':');
+  var mins = (+parts[0])*60 + (+parts[1]);
+  var seed = tiemSeed(now);
   var total = S.tasks.length;
   var doneCount = S.tasks.filter(function(t){return isDone(t)}).length;
-  var titleEl = $('dailyTitle');
-  var msgEl = $('dailyMsg');
-  if (!titleEl || !msgEl) return;
+  var msg = '';
 
-  var baseMsg = '';
-  if (total === 0) {
-    titleEl.textContent = 'Empty Schedule · Add New Tiems';
-    baseMsg = ADD_MORE_MSGS[seed % ADD_MORE_MSGS.length];
+  if (mins >= 300 && mins < 660) {
+    msg = SURPRISE_MORNING[seed % SURPRISE_MORNING.length];
+  } else if ((mins >= 720 && mins < 810) || (mins >= 1110 && mins < 1200)) {
+    msg = SURPRISE_MEAL[(seed + mins) % SURPRISE_MEAL.length];
+  } else if (mins >= 1290 || mins < 270) {
+    msg = SURPRISE_NIGHT[seed % SURPRISE_NIGHT.length];
+  } else if (total === 0) {
+    msg = SURPRISE_EMPTY[seed % SURPRISE_EMPTY.length];
   } else if (doneCount === total) {
-    titleEl.textContent = 'All Done · Gentle Praise';
-    baseMsg = PRAISE_MSGS[seed % PRAISE_MSGS.length];
+    msg = SURPRISE_ALL_DONE[seed % SURPRISE_ALL_DONE.length];
   } else {
-    titleEl.textContent = 'Daily Encouragement (' + doneCount + '/' + total + ' done)';
-    baseMsg = IN_PROGRESS_MSGS[seed % IN_PROGRESS_MSGS.length];
+    msg = SURPRISE_PROGRESS[(seed + doneCount) % SURPRISE_PROGRESS.length];
   }
-  var showRandom = ((seed * 7 + total + doneCount) % 2) === 0;
-  msgEl.textContent = showRandom ? (baseMsg + ' · ' + RANDOM_DAILY_NOTE) : baseMsg;
 
+  if (((seed * 5 + mins) % 7) === 0) {
+    msg = msg + ' · ' + DAILY_SURPRISE_LINE;
+  }
+  return msg;
+}
+
+var origTickNext = tickNext;
+tickNext = function(){
+  var now = new Date();
   var cur = hm(now);
-  var labels = ['Breakfast','Lunch','Dinner'];
-  var nextMealIdx = -1;
-  for (var m=0; m<S.meals.length; m++) {
-    if (S.meals[m] >= cur) { nextMealIdx = m; break; }
+  var up = S.tasks.filter(function(t){return !isDone(t)&&t.tiem>=cur}).sort(function(a,b){return a.tiem<b.tiem?-1:1})[0];
+  if (up) {
+    $('next').innerHTML = 'Up next at <b>' + fmt(up.tiem) + '</b>: ' + esc(up.text);
+  } else {
+    $('next').innerHTML = esc(getSurpriseByTiem(now));
   }
-  var mealSpan = $('mealHint');
-  if (mealSpan) {
-    if (nextMealIdx >= 0) {
-      mealSpan.textContent = labels[nextMealIdx] + ' around ' + fmt(S.meals[nextMealIdx]);
-    } else {
-      mealSpan.textContent = 'Meals done for today · Next: ' + labels[0] + ' ' + fmt(S.meals[0]);
-    }
-  }
-
-  var sleepSpan = $('sleepHint');
-  if (sleepSpan) {
-    var bed = S.bedTime || '22:30';
-    var parts = bed.split(':');
-    var bedMin = (+parts[0])*60 + (+parts[1]);
-    var nowParts = cur.split(':');
-    var nowMin = (+nowParts[0])*60 + (+nowParts[1]);
-    var diff = bedMin - nowMin;
-    if (diff < 0) diff += 1440;
-    if (diff === 0) {
-      sleepSpan.textContent = 'It’s sleep tiem now (' + fmt(bed) + ')';
-    } else if (diff < 180) {
-      var hrs = Math.floor(diff/60), mins = diff%60;
-      sleepSpan.textContent = (hrs ? hrs+'h ' : '') + mins + 'm until sleep (' + fmt(bed) + ')';
-    } else {
-      sleepSpan.textContent = 'Wind down by ' + fmt(bed);
-    }
-  }
-}
-
-function sendNudge(title, body){
-  try{
-    if('Notification' in window && Notification.permission === 'granted'){
-      new Notification(title, {body: body});
-    }
-  }catch(e){}
-  if(navigator.vibrate) navigator.vibrate([180,100,180]);
-}
+};
 
 var origCheck = check;
 check = function(){
   origCheck();
   var now = new Date();
-  var cur = hm(now);
   var dk = dayKey(now);
-  var seed = daySeed(now);
-
-  if (S.mornTime && cur === S.mornTime && S.lastMorn !== dk) {
-    S.lastMorn = dk;
+  var slotKey = dk + '-' + hm(now);
+  if (now.getSeconds() === 0 && S.lastAutoSurprise !== slotKey) {
+    S.lastAutoSurprise = slotKey;
     save();
-    var mMsg = MORNING_MOTIVATIONS[seed % MORNING_MOTIVATIONS.length];
-    $('next').innerHTML = 'Morning motivation: <b>' + esc(mMsg) + '</b>';
-    sendNudge('Morning Motivation · ' + BRAND.name, mMsg);
+    tickNext();
   }
+};
 
-  if (S.bedTime && cur === S.bedTime && S.lastBed !== dk) {
-    S.lastBed = dk;
-    save();
-    var bMsg = BEDTIME_NUDGES[seed % BEDTIME_NUDGES.length];
-    ring({id:'bedtime', text:'Sleep Tiem Reminder', note:bMsg, tiem:cur});
-    sendNudge('Sleep Tiem Reminder', bMsg);
-  }
+/* ---- Separate Calendar View + Smooth Swipe ---- */
+var isCalOpen = false;
+var viewDate = new Date();
+var selectedIso = dayKey(new Date());
 
-  var mealNames = ['Breakfast','Lunch','Dinner'];
-  for (var i=0; i<S.meals.length; i++) {
-    var mKey = dk + '-' + i;
-    if (S.meals[i] && cur === S.meals[i] && S.lastMeal !== mKey) {
-      S.lastMeal = mKey;
-      save();
-      var textMsg = 'gud tiem to eat ' + mealNames[i].toLowerCase() + '—dont skip meals nd eatwhaell';
-      $('next').innerHTML = 'Meal tiem: <b>' + esc(mealNames[i]) + '</b> (' + fmt(S.meals[i]) + ')';
-      sendNudge(mealNames[i] + ' Tiem', textMsg);
+function setCalView(openCal){
+  isCalOpen = !!openCal;
+  var track = $('pagerTrack');
+  var btn = $('viewSwitchBtn');
+  if (track) track.classList.toggle('show-cal', isCalOpen);
+  if (btn) btn.textContent = isCalOpen ? 'Tiem' : 'Calendar';
+}
+
+if ($('viewSwitchBtn')) {
+  $('viewSwitchBtn').onclick = function(){ setCalView(!isCalOpen); };
+}
+
+var touchStartX = 0, touchStartY = 0, swiping = false;
+var pagerEl = $('pager');
+if (pagerEl) {
+  pagerEl.addEventListener('touchstart', function(e){
+    if (!e.touches || !e.touches.length) return;
+    if (e.target && e.target.closest('.cal-grid')) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    swiping = true;
+  }, {passive:true});
+
+  pagerEl.addEventListener('touchend', function(e){
+    if (!swiping || !e.changedTouches || !e.changedTouches.length) return;
+    swiping = false;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      if (dx < 0 && !isCalOpen) setCalView(true);
+      else if (dx > 0 && isCalOpen) setCalView(false);
     }
+  }, {passive:true});
+}
+
+function isoFromYMD(y, m, d){
+  return y + '-' + pad(m + 1) + '-' + pad(d);
+}
+
+function renderCalendar(){
+  var grid = $('calGrid');
+  var label = $('calMonthLabel');
+  if (!grid || !label) return;
+
+  var y = viewDate.getFullYear();
+  var m = viewDate.getMonth();
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  label.textContent = monthNames[m] + ' ' + y;
+
+  var dows = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var htmlOut = dows.map(function(d){ return '<div class="cal-dow">' + d + '</div>'; }).join('');
+
+  var firstDow = new Date(y, m, 1).getDay();
+  var daysInMonth = new Date(y, m + 1, 0).getDate();
+  var prevDays = new Date(y, m, 0).getDate();
+  var todayIso = dayKey(new Date());
+
+  for (var i = firstDow - 1; i >= 0; i--) {
+    var pd = prevDays - i;
+    var py = m === 0 ? y - 1 : y;
+    var pm = m === 0 ? 11 : m - 1;
+    var pIso = isoFromYMD(py, pm, pd);
+    htmlOut += '<button type="button" class="cal-day muted" data-iso="' + pIso + '">' + pd + '</button>';
   }
 
-  if (now.getSeconds() === 0) updateDailyBanner();
-};
+  for (var d = 1; d <= daysInMonth; d++) {
+    var iso = isoFromYMD(y, m, d);
+    var marks = S.calMarks[iso] || [];
+    var cls = 'cal-day';
+    if (iso === todayIso) cls += ' today';
+    if (iso === selectedIso) cls += ' selected';
+    var dotsHtml = marks.slice(0, 4).map(function(mk){
+      var t = mk.type || 'other';
+      return '<span class="dot dot-' + t + '"></span>';
+    }).join('');
+    htmlOut += '<button type="button" class="cal-day' + cls.slice(7) + '" data-iso="' + iso + '">' + d + '<span class="dots">' + dotsHtml + '</span></button>';
+  }
 
-var origRender = render;
-render = function(){
-  origRender();
-  updateDailyBanner();
-};
+  var totalCells = firstDow + daysInMonth;
+  var trailing = (7 - (totalCells % 7)) % 7;
+  for (var tDay = 1; tDay <= trailing; tDay++) {
+    var ny = m === 11 ? y + 1 : y;
+    var nm = m === 11 ? 0 : m + 1;
+    var nIso = isoFromYMD(ny, nm, tDay);
+    htmlOut += '<button type="button" class="cal-day muted" data-iso="' + nIso + '">' + tDay + '</button>';
+  }
 
-if ($('sMornTime')) {
-  $('sMornTime').value = S.mornTime;
-  $('sMornTime').onchange = function(){ S.mornTime = $('sMornTime').value || '07:30'; save(); updateDailyBanner(); };
+  grid.innerHTML = htmlOut;
+  renderSelectedMarks();
 }
-if ($('sBedTime')) {
-  $('sBedTime').value = S.bedTime;
-  $('sBedTime').onchange = function(){ S.bedTime = $('sBedTime').value || '22:30'; save(); updateDailyBanner(); };
+
+function renderSelectedMarks(){
+  var titleEl = $('selectedDateTitle');
+  var listEl = $('selectedDateMarks');
+  if (!titleEl || !listEl) return;
+  titleEl.textContent = 'Marks for ' + selectedIso;
+  var marks = S.calMarks[selectedIso] || [];
+  if (!marks.length) {
+    listEl.innerHTML = '<div class="empty" style="padding:6px">No marks on this date yet. Add a monthsary, birthday, or holiday above.</div>';
+    return;
+  }
+  listEl.innerHTML = marks.map(function(mk, idx){
+    var typeLabel = mk.type === 'monthsary' ? 'Monthsary' : mk.type === 'birthday' ? 'Birthday' : mk.type === 'holiday' ? 'Holiday' : 'Special Tiem';
+    return '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">' + esc(typeLabel) + '</span><b>' + esc(mk.label || typeLabel) + '</b></div><button class="icon" data-del-mark="' + idx + '" aria-label="Remove mark">✕</button></div>';
+  }).join('');
 }
-if ($('sMeal1') && $('sMeal2') && $('sMeal3')) {
-  $('sMeal1').value = S.meals[0];
-  $('sMeal2').value = S.meals[1];
-  $('sMeal3').value = S.meals[2];
-  var syncMeals = function(){
-    S.meals = [$('sMeal1').value||'08:00', $('sMeal2').value||'12:30', $('sMeal3').value||'19:00'];
+
+if ($('prevMonth')) {
+  $('prevMonth').onclick = function(){ viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1); renderCalendar(); };
+}
+if ($('nextMonth')) {
+  $('nextMonth').onclick = function(){ viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1); renderCalendar(); };
+}
+if ($('calGrid')) {
+  $('calGrid').addEventListener('click', function(e){
+    var btn = e.target.closest('.cal-day');
+    if (!btn || !btn.dataset.iso) return;
+    selectedIso = btn.dataset.iso;
+    var parts = selectedIso.split('-');
+    viewDate = new Date(+parts[0], (+parts[1]) - 1, 1);
+    renderCalendar();
+  });
+}
+if ($('saveMarkBtn')) {
+  $('saveMarkBtn').onclick = function(){
+    var cat = $('markCategory') ? $('markCategory').value : 'other';
+    var lbl = $('markLabel') ? $('markLabel').value.trim() : '';
+    if (!S.calMarks[selectedIso]) S.calMarks[selectedIso] = [];
+    S.calMarks[selectedIso].push({ type: cat, label: lbl || cat });
+    if ($('markLabel')) $('markLabel').value = '';
     save();
-    updateDailyBanner();
+    renderCalendar();
   };
-  $('sMeal1').onchange = syncMeals;
-  $('sMeal2').onchange = syncMeals;
-  $('sMeal3').onchange = syncMeals;
+}
+if ($('selectedDateMarks')) {
+  $('selectedDateMarks').addEventListener('click', function(e){
+    var delBtn = e.target.closest('[data-del-mark]');
+    if (!delBtn) return;
+    var i = +delBtn.dataset.delMark;
+    if (S.calMarks[selectedIso]) {
+      S.calMarks[selectedIso].splice(i, 1);
+      if (!S.calMarks[selectedIso].length) delete S.calMarks[selectedIso];
+      save();
+      renderCalendar();
+    }
+  });
 }
 
-applyBrand();render();updateDailyBanner();check();
+applyBrand();render();renderCalendar();check();
 
 /* ---- PWA install & offline service worker ---- */
 var deferredPrompt=null;
