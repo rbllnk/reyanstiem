@@ -11,11 +11,11 @@
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#16152b">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-<link rel="apple-touch-icon" href="./logo.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <title>Reyan’s Tiem Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-@font-face{font-family:'MyFont';src:url('./MyFont.ttf.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+@font-face{font-family:'MyFont';src:url('./myfont.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
 :root{--bg:#18121b;--card:#251b29;--ink:#fff0f6;--mute:#d4a5ba;--line:#3d2944;--pink:#ff9ec4;--pinkbg:#3b1e30;--mint:#f7b2cd;--mintbg:#331a29;--btn:#ff9ec4;--btntxt:#1b0f18;color-scheme:dark;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 :root[data-theme="light"]{--bg:#fff5f9;--card:#ffffff;--ink:#361c2c;--mute:#8f5e76;--line:#f5d0e0;--pink:#ff85b3;--pinkbg:#ffe4ef;--mint:#ff9ec4;--mintbg:#fff0f6;--btn:#ff7aa8;--btntxt:#ffffff;color-scheme:light}
@@ -58,6 +58,12 @@ details .row{margin-top:12px}
 #ring h2{font:600 28px 'MyFont',Fredoka,sans-serif;margin:0 0 6px;overflow-wrap:anywhere}
 @keyframes wob{50%{transform:rotate(-8deg) scale(1.06)}}
 @media (prefers-reduced-motion:reduce){#ring .logo{animation:none}}
+.gentle{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 16px;margin-bottom:16px}
+.gentle h3{margin:0 0 4px;font:600 16px 'MyFont',Fredoka,sans-serif;color:var(--pink)}
+.gentle p{margin:0;color:var(--mute);font-size:14px}
+.pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pill{background:var(--pinkbg);color:var(--ink);border-radius:12px;padding:8px 12px;font-size:13px;flex:1 1 140px}
+.pill small{display:block;color:var(--mute);font-size:12px}
 </style>
 </head>
 <body>
@@ -66,10 +72,18 @@ details .row{margin-top:12px}
 <div class="clock" id="clock">--:--</div>
 <div class="date" id="date"></div>
 <div class="next" id="next"></div>
+<div class="gentle" id="dailyBanner">
+<h3 id="dailyTitle">Today’s Tiem Note</h3>
+<p id="dailyMsg"></p>
+<div class="pill-row">
+<div class="pill"><small>Good tiem to eat</small><span id="mealHint">--</span></div>
+<div class="pill"><small>Sleep & rest tiem</small><span id="sleepHint">--</span></div>
+</div>
+</div>
 
 <div class="card">
 <div class="row">
-<input type="tiem" id="fTime" aria-label="Tiem" value="09:00">
+<input type="time" id="fTime" aria-label="Tiem" value="09:00">
 <input type="text" id="fText" placeholder="What to do (e.g. drink water)" maxlength="80">
 </div>
 <div class="row" style="margin-top:8px">
@@ -96,7 +110,10 @@ details .row{margin-top:12px}
 <button class="ghost" id="test">Test alarm</button>
 
 </div>
-<p class="date" style="margin-top:12px">Alarms ring while this page is open in a tab or on your Home Screen. Keep the sound on.</p>
+<div class="row"><label>Morning motivation tiem <input type="time" id="sMornTime" value="07:30"></label></div>
+<div class="row"><label>Bedtime reminder tiem <input type="time" id="sBedTime" value="22:30"></label></div>
+<div class="row"><label>Breakfast / Lunch / Dinner <input type="time" id="sMeal1" value="08:00"> <input type="time" id="sMeal2" value="12:30"> <input type="time" id="sMeal3" value="19:00"></label></div>
+<p class="date" style="margin-top:12px">Alarms and morning/bedtime/meal nudges work while this page is open in a tab, on your Home Screen, or via notifications when allowed. Keep the sound on.</p>
 </details>
 </main>
 
@@ -110,7 +127,7 @@ details .row{margin-top:12px}
 var KEY='tinytime.v1';
 var TZ='Asia/Manila';
 /* OWNER-ONLY DESIGN: name, logo and alarm sound are set here by the owner. Users cannot change them. */
-var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./clock.png',sound:''};
+var BRAND={name:'Reyan’s Tiem Manager',logo:'./icons/logo.png',clock:'./icons/clock.png',sound:''};
 var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5};
 try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
 if(S.name==='Tiny Tiem')S.name='Reyan’s Tiem Manager';
@@ -216,7 +233,182 @@ $('perm').onclick=function(){unlock();beep();try{if('Notification' in window)Not
 $('test').onclick=function(){unlock();ring({id:'test',text:'Test alarm',note:'This is what your reminder will look like.',tiem:'00:00'})};
 document.addEventListener('click',unlock,{once:true});
 
-applyBrand();render();check();
+
+var PRAISE_MSGS=[
+  'you finished every single tiem on today’s list—so proud of you! taek a deep breath, rest, nd doomscroll na bozz',
+  'all scheduled tiems complete! u showed up for urself today, nd that deserves ril rest. mwa',
+  'everything on ur list is checked off! relax without guilt. :)'
+];
+var ADD_MORE_MSGS=[
+  'ur schedule is quiet right now... whenever you’re ready, add a gentle tiem or a smol cozy goal.',
+  'nothing on the board yet! gou drink watur, stretch, or plan 1 little thing u want to do.',
+  'blank canvas for your tiem today... add a reminder wehnever sumthing comes up so yew dont havb to hold it in ur head'
+];
+var IN_PROGRESS_MSGS=[
+  'youre doing better than u think todie... am so proud of u',
+  'even smol progress counts on a busy tiem.',
+  'yew dont hab to rush vrything at once... jus focus on da next tiem ahead.'
+];
+var MORNING_MOTIVATIONS=[
+  'gud morningg! taek it slow, drink sum watur, nd be kind to yourself todie.. i love youu',
+  'guddmoringg! youve got dis.',
+  'gudd morningg! start w waht feels manageable first nd protect ur peace thry da day.'
+];
+var BEDTIME_NUDGES=[
+  'sleep reminder: screens down soon bozz... let ur body rest for tomorrow’s tiem.',
+  'slep tiem check... doomscroll, stretch a little, nd get sum rest so u wake up lighter.'
+];
+var RANDOM_DAILY_NOTE='wag k n magpa generaet kai chatgpt ng shed mu';
+
+S.mornTime = S.mornTime || '07:30';
+S.bedTime  = S.bedTime  || '22:30';
+S.meals    = Array.isArray(S.meals) && S.meals.length===3 ? S.meals : ['08:00','12:30','19:00'];
+S.lastMorn = S.lastMorn || '';
+S.lastBed  = S.lastBed  || '';
+S.lastMeal = S.lastMeal || '';
+
+function daySeed(d){
+  var k = dayKey(d);
+  var sum = 0;
+  for (var i=0; i<k.length; i++) sum += k.charCodeAt(i);
+  return sum;
+}
+
+function updateDailyBanner(){
+  var now = new Date();
+  var seed = daySeed(now);
+  var total = S.tasks.length;
+  var doneCount = S.tasks.filter(function(t){return isDone(t)}).length;
+  var titleEl = $('dailyTitle');
+  var msgEl = $('dailyMsg');
+  if (!titleEl || !msgEl) return;
+
+  var baseMsg = '';
+  if (total === 0) {
+    titleEl.textContent = 'Empty Schedule · Add New Tiems';
+    baseMsg = ADD_MORE_MSGS[seed % ADD_MORE_MSGS.length];
+  } else if (doneCount === total) {
+    titleEl.textContent = 'All Done · Gentle Praise';
+    baseMsg = PRAISE_MSGS[seed % PRAISE_MSGS.length];
+  } else {
+    titleEl.textContent = 'Daily Encouragement (' + doneCount + '/' + total + ' done)';
+    baseMsg = IN_PROGRESS_MSGS[seed % IN_PROGRESS_MSGS.length];
+  }
+  var showRandom = ((seed * 7 + total + doneCount) % 2) === 0;
+  msgEl.textContent = showRandom ? (baseMsg + ' · ' + RANDOM_DAILY_NOTE) : baseMsg;
+
+  var cur = hm(now);
+  var labels = ['Breakfast','Lunch','Dinner'];
+  var nextMealIdx = -1;
+  for (var m=0; m<S.meals.length; m++) {
+    if (S.meals[m] >= cur) { nextMealIdx = m; break; }
+  }
+  var mealSpan = $('mealHint');
+  if (mealSpan) {
+    if (nextMealIdx >= 0) {
+      mealSpan.textContent = labels[nextMealIdx] + ' around ' + fmt(S.meals[nextMealIdx]);
+    } else {
+      mealSpan.textContent = 'Meals done for today · Next: ' + labels[0] + ' ' + fmt(S.meals[0]);
+    }
+  }
+
+  var sleepSpan = $('sleepHint');
+  if (sleepSpan) {
+    var bed = S.bedTime || '22:30';
+    var parts = bed.split(':');
+    var bedMin = (+parts[0])*60 + (+parts[1]);
+    var nowParts = cur.split(':');
+    var nowMin = (+nowParts[0])*60 + (+nowParts[1]);
+    var diff = bedMin - nowMin;
+    if (diff < 0) diff += 1440;
+    if (diff === 0) {
+      sleepSpan.textContent = 'It’s sleep tiem now (' + fmt(bed) + ')';
+    } else if (diff < 180) {
+      var hrs = Math.floor(diff/60), mins = diff%60;
+      sleepSpan.textContent = (hrs ? hrs+'h ' : '') + mins + 'm until sleep (' + fmt(bed) + ')';
+    } else {
+      sleepSpan.textContent = 'Wind down by ' + fmt(bed);
+    }
+  }
+}
+
+function sendNudge(title, body){
+  try{
+    if('Notification' in window && Notification.permission === 'granted'){
+      new Notification(title, {body: body});
+    }
+  }catch(e){}
+  if(navigator.vibrate) navigator.vibrate([180,100,180]);
+}
+
+var origCheck = check;
+check = function(){
+  origCheck();
+  var now = new Date();
+  var cur = hm(now);
+  var dk = dayKey(now);
+  var seed = daySeed(now);
+
+  if (S.mornTime && cur === S.mornTime && S.lastMorn !== dk) {
+    S.lastMorn = dk;
+    save();
+    var mMsg = MORNING_MOTIVATIONS[seed % MORNING_MOTIVATIONS.length];
+    $('next').innerHTML = 'Morning motivation: <b>' + esc(mMsg) + '</b>';
+    sendNudge('Morning Motivation · ' + BRAND.name, mMsg);
+  }
+
+  if (S.bedTime && cur === S.bedTime && S.lastBed !== dk) {
+    S.lastBed = dk;
+    save();
+    var bMsg = BEDTIME_NUDGES[seed % BEDTIME_NUDGES.length];
+    ring({id:'bedtime', text:'Sleep Tiem Reminder', note:bMsg, tiem:cur});
+    sendNudge('Sleep Tiem Reminder', bMsg);
+  }
+
+  var mealNames = ['Breakfast','Lunch','Dinner'];
+  for (var i=0; i<S.meals.length; i++) {
+    var mKey = dk + '-' + i;
+    if (S.meals[i] && cur === S.meals[i] && S.lastMeal !== mKey) {
+      S.lastMeal = mKey;
+      save();
+      var textMsg = 'gud tiem to eat ' + mealNames[i].toLowerCase() + '—dont skip meals nd eatwhaell';
+      $('next').innerHTML = 'Meal tiem: <b>' + esc(mealNames[i]) + '</b> (' + fmt(S.meals[i]) + ')';
+      sendNudge(mealNames[i] + ' Tiem', textMsg);
+    }
+  }
+
+  if (now.getSeconds() === 0) updateDailyBanner();
+};
+
+var origRender = render;
+render = function(){
+  origRender();
+  updateDailyBanner();
+};
+
+if ($('sMornTime')) {
+  $('sMornTime').value = S.mornTime;
+  $('sMornTime').onchange = function(){ S.mornTime = $('sMornTime').value || '07:30'; save(); updateDailyBanner(); };
+}
+if ($('sBedTime')) {
+  $('sBedTime').value = S.bedTime;
+  $('sBedTime').onchange = function(){ S.bedTime = $('sBedTime').value || '22:30'; save(); updateDailyBanner(); };
+}
+if ($('sMeal1') && $('sMeal2') && $('sMeal3')) {
+  $('sMeal1').value = S.meals[0];
+  $('sMeal2').value = S.meals[1];
+  $('sMeal3').value = S.meals[2];
+  var syncMeals = function(){
+    S.meals = [$('sMeal1').value||'08:00', $('sMeal2').value||'12:30', $('sMeal3').value||'19:00'];
+    save();
+    updateDailyBanner();
+  };
+  $('sMeal1').onchange = syncMeals;
+  $('sMeal2').onchange = syncMeals;
+  $('sMeal3').onchange = syncMeals;
+}
+
+applyBrand();render();updateDailyBanner();check();
 
 /* ---- PWA install & offline service worker ---- */
 var deferredPrompt=null;
