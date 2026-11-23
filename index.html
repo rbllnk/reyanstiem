@@ -107,7 +107,7 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 .cal-card-art.has-cal-bg .cal-day.selected{background:var(--pinkbg)}
 .sched-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
 .sched-item:first-child{border-top:0}
-.sched-time{min-width:86px;font:600 14px/1.35 'MyFont',Fredoka,sans-serif;color:var(--pink)}
+.sched-time{min-width:86px;font:600 13px/1.3 'MyFont',Fredoka,sans-serif;color:var(--pink)}
 .sched-time small{display:block;font-size:11px;color:var(--mute);font-family:Nunito,sans-serif}
 .sched-body{flex:1;min-width:0}
 .sched-body b{display:block;font-size:16px;line-height:1.35;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
@@ -331,15 +331,78 @@ document.addEventListener('visibilitychange',function(){
 function ring(t){
 queue.push(t);if(!ringing)next();
 }
+function dismissActiveAlarm(mode){
+  if(!ringing)return;
+  var current=ringing;
+  stopSound();
+  if(current.id!=='test'){
+    if(mode==='snooze'){
+      current.snoozeUntil=Date.now()+S.snooze*60000;
+    } else {
+      current.doneAt=new Date().toISOString();
+      current.snoozeUntil=0;
+    }
+    save();
+    render();
+  }
+  ringing=null;
+  next();
+}
+
+function showAlarmNotification(alarmObj){
+  if(!('Notification' in window) || Notification.permission!=='granted')return;
+  var title=alarmObj.text || 'Alarm';
+  var body=(alarmObj.note || ('It’s '+fmt(alarmObj.tiem)+'.'));
+  var opts={
+    body:body,
+    icon:'./logo.png',
+    badge:'./logo.png',
+    tag:'tiem-alarm-'+(alarmObj.id||'now'),
+    renotify:true,
+    requireInteraction:true,
+    vibrate:[400,200,400,200,400],
+    data:{alarmId:alarmObj.id||'test',tiem:alarmObj.tiem||'00:00'},
+    actions:[
+      {action:'stop',title:'End Alarm'},
+      {action:'snooze',title:'Snooze'}
+    ]
+  };
+  if(navigator.serviceWorker && navigator.serviceWorker.ready){
+    navigator.serviceWorker.ready.then(function(reg){
+      if(reg && reg.showNotification){
+        return reg.showNotification(title, opts);
+      }
+      try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
+    }).catch(function(){
+      try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
+    });
+  } else {
+    try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
+  }
+}
+
 function next(){
 ringing=queue.shift();
 if(!ringing){$('ring').classList.remove('on');return}
 $('ringText').textContent=ringing.text;$('ringNote').textContent=ringing.note||'It’s '+fmt(ringing.tiem)+'.';
 $('ring').classList.add('on');startSound();
-try{if('Notification' in window&&Notification.permission==='granted')new Notification(ringing.text,{body:ringing.note||fmt(ringing.tiem)})}catch(e){}
+showAlarmNotification(ringing);
 }
-$('ringDone').onclick=function(){stopSound();if(ringing.id!=='test'){ringing.doneAt=new Date().toISOString();ringing.snoozeUntil=0;save();render()}ringing=null;next()};
-$('snooze').onclick=function(){stopSound();if(ringing.id!=='test'){ringing.snoozeUntil=Date.now()+S.snooze*60000;save()}ringing=null;next()};
+$('ringDone').onclick=function(){dismissActiveAlarm('done')};
+$('snooze').onclick=function(){dismissActiveAlarm('snooze')};
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message',function(event){
+    var data=event && event.data;
+    if(!data || data.type!=='ALARM_ACTION')return;
+    if(ringing){
+      if(data.action==='snooze') dismissActiveAlarm('snooze');
+      else dismissActiveAlarm('done');
+    } else if(data.action==='stop'){
+      stopSound();
+    }
+  });
+}
 
 function heads(t){
 $('next').innerHTML='Heads up: <b>'+esc(t.text)+'</b> starts in '+S.lead+' min';
