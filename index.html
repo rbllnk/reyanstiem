@@ -110,7 +110,7 @@ details .row{margin-top:12px}
 var KEY='tinytime.v1';
 var TZ='Asia/Manila';
 /* OWNER-ONLY DESIGN: name, logo and alarm sound are set here by the owner. Users cannot change them. */
-var BRAND={name:'Reyan’s Tiem Manager',logo:'./'./logo'',clock:'./icons/clock.png',sound:''};
+var BRAND={name:'Reyan’s Tiem Manager',logo:'./'./logo'',clock:''./clock',sound:''};
 var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5};
 try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
 if(S.name==='Tiny Tiem')S.name='Reyan’s Tiem Manager';
