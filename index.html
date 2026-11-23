@@ -89,11 +89,11 @@ details .row{margin-top:12px}
 .mark-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--pinkbg);color:var(--ink);margin-right:6px}
 select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:9px 10px}
 .cal-card-art{position:relative;overflow:hidden}
-.cal-card-art.has-cal-bg{background-image:var(--cal-bg);background-size:cover;background-position:center;background-repeat:no-repeat}
-.cal-card-art.has-cal-bg::before{content:"";position:absolute;inset:0;background:rgba(24,18,27,.62);pointer-events:none;z-index:0}
-.cal-card-art > *{position:relative;z-index:1}
-.cal-card-art.has-cal-bg .cal-day{background:rgba(24,18,27,.45)}
-.cal-card-art.has-cal-bg .cal-day.selected{background:rgba(255,158,196,.28)}
+.cal-art-banner{display:none;margin-bottom:12px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#fff}
+.cal-art-banner.show{display:block}
+.cal-art-banner img{display:block;width:100%;max-height:240px;object-fit:contain;background:#fff}
+.cal-card-art.has-cal-bg .cal-day{background:var(--bg)}
+.cal-card-art.has-cal-bg .cal-day.selected{background:var(--pinkbg)}
 .bottom-install{margin-top:16px}
 </style>
 </head>
@@ -145,6 +145,7 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 
 <section class="page" id="calPage" aria-label="Calendar">
 <div class="card cal-card-art" id="calCard" style="margin-top:16px">
+<div class="cal-art-banner" id="calArtBanner"><img id="calArtImg" alt="Drawn calendar artwork"></div>
 <div class="cal-head">
 <button class="ghost" id="prevMonth" aria-label="Previous month">‹</button>
 <h2 class="cal-title" id="calMonthLabel">Month</h2>
@@ -524,9 +525,13 @@ function autoCorrectCalText(str){
 /* Optional: if you upload a calendar background PNG (e.g. ./cal-bg.png) to GitHub, set BRAND.calBg to './cal-bg.png' */
 if (typeof BRAND !== 'undefined' && BRAND.calBg) {
   var calCardEl = $('calCard');
-  if (calCardEl) {
-    calCardEl.style.setProperty('--cal-bg', "url('" + BRAND.calBg + "')");
-    calCardEl.classList.add('has-cal-bg');
+  var calBannerEl = $('calArtBanner');
+  var calImgEl = $('calArtImg');
+  if (calCardEl) calCardEl.classList.add('has-cal-bg');
+  if (calBannerEl && calImgEl) {
+    calImgEl.src = BRAND.calBg;
+    calImgEl.onerror = function(){ calBannerEl.classList.remove('show'); };
+    calBannerEl.classList.add('show');
   }
 }
 
