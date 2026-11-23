@@ -22,7 +22,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'MyFont',Nunito,system-ui,sans-serif}
-main{max-width:560px;margin:0 auto;padding:20px 16px 60px}
+main{max-width:740px;margin:0 auto;padding:20px 14px 64px}
 header{display:flex;align-items:center;gap:12px}
 .logo{width:60px;height:60px;border-radius:16px;background:var(--card);display:grid;place-items:center;font-size:28px;overflow:hidden;flex:none}
 .logo img{width:100%;height:100%;object-fit:contain}
@@ -74,32 +74,39 @@ details .row{margin-top:12px}
 @media (prefers-reduced-motion:reduce){.pager-track{transition:none}}
 .cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
 .cal-title{font:600 20px 'MyFont',Fredoka,sans-serif;margin:0}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
-.cal-dow{font-size:12px;color:var(--mute);padding:4px 0}
-.cal-day{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:12px;min-height:46px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);font:600 14px 'MyFont',Nunito,sans-serif;transition:transform .16s ease,border-color .16s ease,background .16s ease}
-.cal-day:active{transform:scale(.95)}
-.cal-day.muted{opacity:.35}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}
+.cal-dow{font-size:11px;color:var(--mute);padding:4px 0}
+.cal-day{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:12px;min-height:84px;padding:6px 4px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;cursor:pointer;color:var(--ink);font:600 13px 'MyFont',Nunito,sans-serif;transition:transform .16s ease,border-color .16s ease,background .16s ease;text-align:left;overflow:hidden}
+.cal-day:active{transform:scale(.97)}
+.cal-day.muted{opacity:.38}
 .cal-day.today{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink)}
 .cal-day.selected{background:var(--pinkbg);border-color:var(--pink)}
-.dots{display:flex;gap:3px;margin-top:3px;min-height:6px;align-items:center;justify-content:center}
-.dot{width:6px;height:6px;border-radius:999px;display:inline-block}
-.dot-monthsary{background:#ff9ec4}
-.dot-birthday{background:#ffd166}
-.dot-holiday{background:#7bdff2}
-.dot-other{background:#c8b6ff}
+.cal-day-num{font:700 12px/1.1 'MyFont',Fredoka,sans-serif;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.cal-chip{display:block;width:100%;font:600 10px/1.2 'MyFont',Nunito,sans-serif;background:var(--card);border-left:3px solid var(--pink);color:var(--ink);border-radius:6px;padding:3px 4px;margin-top:3px;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+.cal-chip.type-task{border-left-color:#7bdff2}
+.cal-chip.type-appointment{border-left-color:#ffd166}
+.cal-chip.type-event{border-left-color:#ff9ec4}
+.cal-chip-time{display:block;font-size:9px;color:var(--mute);font-family:ui-monospace,Menlo,monospace}
 .mark-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--pinkbg);color:var(--ink);margin-right:6px}
+.badge-event{background:#3b1e30;color:#ff9ec4}
+.badge-task{background:#182d38;color:#7bdff2}
+.badge-appointment{background:#362c18;color:#ffd166}
+:root[data-theme="light"] .badge-event{background:#ffe4ef;color:#a8245a}
+:root[data-theme="light"] .badge-task{background:#dff6fc;color:#145c73}
+:root[data-theme="light"] .badge-appointment{background:#fff2cc;color:#7a5200}
 select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:9px 10px}
-.cal-card-art{position:relative;overflow:hidden}
+.cal-card-art{position:relative;overflow:visible}
 .cal-art-banner{display:none;margin-bottom:12px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#fff}
 .cal-art-banner.show{display:block}
 .cal-art-banner img{display:block;width:100%;max-height:240px;object-fit:contain;background:#fff}
 .cal-card-art.has-cal-bg .cal-day{background:var(--bg)}
 .cal-card-art.has-cal-bg .cal-day.selected{background:var(--pinkbg)}
-.cal-day{min-height:58px;justify-content:flex-start;padding:5px 2px}
-.cal-lbl{display:block;width:100%;font:600 9px/1.15 'MyFont',Nunito,sans-serif;color:var(--pink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;padding:0 2px}
-.cal-day.muted .cal-lbl{opacity:.6}
-.week-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
-.week-item:first-child{border-top:0}
+.sched-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.sched-item:first-child{border-top:0}
+.sched-time{min-width:86px;font:600 13px/1.3 'MyFont',Fredoka,sans-serif;color:var(--pink)}
+.sched-time small{display:block;font-size:11px;color:var(--mute);font-family:Nunito,sans-serif}
+.sched-body{flex:1;min-width:0}
+.sched-body b{display:block;font-size:15px;line-height:1.3;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
 .bottom-install{margin-top:16px}
 </style>
 </head>
@@ -160,40 +167,41 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <button class="ghost" id="nextMonth" aria-label="Next month">›</button>
 </div>
 <div class="cal-grid" id="calGrid"></div>
-<p class="date" style="margin:10px 0 0;font-size:12px">Swipe right to go back to tiem manager · Tap a date to add marks</p>
+<p class="date" style="margin:10px 0 0;font-size:12px">Tap any date to view its full schedule · Swipe right to go back to tiem manager</p>
 </div>
 
 <div class="card">
-<h3 id="selectedDateTitle" style="margin:0 0 10px;font:600 18px 'MyFont',Fredoka,sans-serif">Selected Date</h3>
+<h3 style="margin:0 0 10px;font:600 18px 'MyFont',Fredoka,sans-serif">Add to Schedule</h3>
 <div class="row">
-<select class="mark-type" id="markCategory" aria-label="Mark type">
-<option value="monthsary">Monthsary</option>
-<option value="birthday">Birthday</option>
-<option value="holiday">Holiday</option>
-<option value="other">Day Plan</option>
+<input type="text" id="calTitle" placeholder="Title (e.g. Science subject, English subject)" maxlength="120" style="flex:2 1 200px">
+<select class="mark-type" id="calKind" aria-label="Schedule item type">
+<option value="event">Event</option>
+<option value="task">Task</option>
+<option value="appointment">Appointment schedule</option>
 </select>
-<input type="text" id="markLabel" placeholder="e.g. Science 10-12am, English 3pm" maxlength="80">
-<button id="saveMarkBtn">Mark</button>
 </div>
-<div id="selectedDateMarks" style="margin-top:12px"></div>
+<div class="row" style="margin-top:8px">
+<label class="chk" style="color:var(--ink)">Time <input type="time" id="calStartTime" value="10:00" aria-label="Start time"></label>
+<label class="chk" style="color:var(--ink)">to <input type="time" id="calEndTime" value="12:00" aria-label="End time"></label>
+<select class="mark-type" id="calRepeatMode" aria-label="Repeat rule">
+<option value="date">This selected date</option>
+<option value="weekly">Every week on this day</option>
+</select>
+<button id="saveCalItemBtn" style="margin-left:auto">Add &amp; arrange</button>
+</div>
 </div>
 
 <div class="card">
-<h3 style="margin:0 0 10px;font:600 18px 'MyFont',Fredoka,sans-serif">Weekly Day Labels</h3>
-<div class="row">
-<select class="mark-type" id="weekDaySelect" aria-label="Day of week">
-<option value="1">Monday</option>
-<option value="2">Tuesday</option>
-<option value="3">Wednesday</option>
-<option value="4">Thursday</option>
-<option value="5">Friday</option>
-<option value="6">Saturday</option>
-<option value="0">Sunday</option>
-</select>
-<input type="text" id="weekDayLabel" placeholder="e.g. PATHFIT 7am-9am" maxlength="80">
-<button id="saveWeekLabelBtn">Add</button>
+<div class="cal-head" style="margin-bottom:8px">
+<h3 id="selectedDateTitle" style="margin:0;font:600 18px 'MyFont',Fredoka,sans-serif">Day Schedule</h3>
+<button class="ghost" id="autoArrangeBtn" style="padding:6px 12px;font-size:13px">Auto-arrange time</button>
 </div>
-<div id="weeklyLabelsList" style="margin-top:12px"></div>
+<div id="selectedDateMarks"></div>
+</div>
+
+<div class="card">
+<h3 style="margin:0 0 10px;font:600 18px 'MyFont',Fredoka,sans-serif">All Weekly &amp; Saved Schedule Items</h3>
+<div id="weeklyLabelsList"></div>
 </div>
 </section>
 </div>
@@ -481,6 +489,90 @@ var isCalOpen = false;
 var viewDate = new Date();
 var selectedIso = dayKey(new Date());
 
+S.calSchedule = Array.isArray(S.calSchedule) ? S.calSchedule : [];
+
+function migrateLegacyCalData(){
+  var migrated = false;
+  if (S.calMarks && typeof S.calMarks === 'object') {
+    Object.keys(S.calMarks).forEach(function(iso){
+      (S.calMarks[iso] || []).forEach(function(mk){
+        var kind = (mk.type === 'task') ? 'task' : (mk.type === 'appointment') ? 'appointment' : 'event';
+        S.calSchedule.push({
+          id: 'm_' + iso + '_' + Math.random().toString(36).slice(2,7),
+          title: autoCorrectCalText(mk.label || mk.type || 'Schedule item'),
+          kind: kind,
+          startTime: '09:00',
+          endTime: '',
+          repeat: 'date',
+          date: iso,
+          dow: new Date(iso + 'T12:00:00').getDay()
+        });
+        migrated = true;
+      });
+    });
+    S.calMarks = {};
+  }
+  if (S.weeklyLabels && typeof S.weeklyLabels === 'object') {
+    Object.keys(S.weeklyLabels).forEach(function(k){
+      (S.weeklyLabels[k] || []).forEach(function(txt){
+        S.calSchedule.push({
+          id: 'w_' + k + '_' + Math.random().toString(36).slice(2,7),
+          title: String(txt),
+          kind: 'event',
+          startTime: '09:00',
+          endTime: '',
+          repeat: 'weekly',
+          date: '',
+          dow: +k
+        });
+        migrated = true;
+      });
+    });
+    S.weeklyLabels = {};
+  }
+  if (migrated) save();
+}
+migrateLegacyCalData();
+
+function timeToMins(t){
+  if (!t || !/^\d{2}:\d{2}$/.test(t)) return 24 * 60 + 1;
+  var p = t.split(':');
+  return (+p[0]) * 60 + (+p[1]);
+}
+
+function fmtTimeRange(st, et){
+  if (!st && !et) return 'All day';
+  var sStr = st ? fmt(st) : '';
+  var eStr = et ? fmt(et) : '';
+  if (sStr && eStr) return sStr + ' – ' + eStr;
+  return sStr || eStr;
+}
+
+function sortScheduleItems(items){
+  return items.slice().sort(function(a, b){
+    var ma = timeToMins(a.startTime);
+    var mb = timeToMins(b.startTime);
+    if (ma !== mb) return ma - mb;
+    return String(a.title || '').localeCompare(String(b.title || ''));
+  });
+}
+
+function getItemsForDate(iso){
+  var parts = iso.split('-');
+  var dow = new Date(+parts[0], (+parts[1]) - 1, +parts[2]).getDay();
+  var matching = S.calSchedule.filter(function(item){
+    if (item.repeat === 'weekly') return +item.dow === dow;
+    return item.date === iso;
+  });
+  return sortScheduleItems(matching);
+}
+
+function kindLabel(k){
+  if (k === 'task') return 'Task';
+  if (k === 'appointment') return 'Appointment schedule';
+  return 'Event';
+}
+
 function setCalView(openCal){
   isCalOpen = !!openCal;
   var track = $('pagerTrack');
@@ -576,6 +668,7 @@ function renderCalendar(){
   var label = $('calMonthLabel');
   if (!grid || !label) return;
 
+  S.calSchedule = sortScheduleItems(S.calSchedule);
   var y = viewDate.getFullYear();
   var m = viewDate.getMonth();
   var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -594,30 +687,21 @@ function renderCalendar(){
     var py = m === 0 ? y - 1 : y;
     var pm = m === 0 ? 11 : m - 1;
     var pIso = isoFromYMD(py, pm, pd);
-    htmlOut += '<button type="button" class="cal-day muted" data-iso="' + pIso + '">' + pd + '</button>';
+    htmlOut += '<button type="button" class="cal-day muted" data-iso="' + pIso + '"><div class="cal-day-num">' + pd + '</div></button>';
   }
 
-  S.weeklyLabels = S.weeklyLabels || {};
   for (var d = 1; d <= daysInMonth; d++) {
     var iso = isoFromYMD(y, m, d);
-    var dow = new Date(y, m, d).getDay();
-    var marks = S.calMarks[iso] || [];
-    var wLabels = S.weeklyLabels[String(dow)] || [];
+    var dayItems = getItemsForDate(iso);
     var cls = 'cal-day';
     if (iso === todayIso) cls += ' today';
     if (iso === selectedIso) cls += ' selected';
-    var dotsHtml = marks.slice(0, 4).map(function(mk){
-      var t = mk.type || 'other';
-      return '<span class="dot dot-' + t + '"></span>';
+    var chipsHtml = dayItems.map(function(it){
+      var k = it.kind || 'event';
+      var tShort = it.startTime ? fmt(it.startTime) : '';
+      return '<span class="cal-chip type-' + esc(k) + '">' + (tShort ? '<span class="cal-chip-time">' + esc(tShort) + '</span>' : '') + esc(it.title) + '</span>';
     }).join('');
-    var allDayLabels = [];
-    wLabels.forEach(function(wl){ allDayLabels.push(wl); });
-    marks.forEach(function(mk){ allDayLabels.push(autoCorrectCalText(mk.label || mk.type || '')); });
-    var cellLabelText = '';
-    if (allDayLabels.length === 1) cellLabelText = allDayLabels[0];
-    else if (allDayLabels.length > 1) cellLabelText = allDayLabels[0] + ' (+' + (allDayLabels.length - 1) + ')';
-    var lblHtml = cellLabelText ? '<span class="cal-lbl">' + esc(cellLabelText) + '</span>' : '';
-    htmlOut += '<button type="button" class="cal-day' + cls.slice(7) + '" data-iso="' + iso + '">' + d + lblHtml + '<span class="dots">' + dotsHtml + '</span></button>';
+    htmlOut += '<button type="button" class="cal-day' + cls.slice(7) + '" data-iso="' + iso + '"><div class="cal-day-num"><span>' + d + '</span></div>' + chipsHtml + '</button>';
   }
 
   var totalCells = firstDow + daysInMonth;
@@ -626,7 +710,7 @@ function renderCalendar(){
     var ny = m === 11 ? y + 1 : y;
     var nm = m === 11 ? 0 : m + 1;
     var nIso = isoFromYMD(ny, nm, tDay);
-    htmlOut += '<button type="button" class="cal-day muted" data-iso="' + nIso + '">' + tDay + '</button>';
+    htmlOut += '<button type="button" class="cal-day muted" data-iso="' + nIso + '"><div class="cal-day-num">' + tDay + '</div></button>';
   }
 
   grid.innerHTML = htmlOut;
@@ -637,25 +721,23 @@ function renderSelectedMarks(){
   var titleEl = $('selectedDateTitle');
   var listEl = $('selectedDateMarks');
   if (!titleEl || !listEl) return;
-  S.weeklyLabels = S.weeklyLabels || {};
   var p = selectedIso.split('-');
   var selDow = new Date(+p[0], (+p[1]) - 1, +p[2]).getDay();
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  titleEl.textContent = dayNames[selDow] + ' · ' + selectedIso + ' — Whole Day Plan';
-  var marks = S.calMarks[selectedIso] || [];
-  var wLabels = S.weeklyLabels[String(selDow)] || [];
-  var itemsHtml = '';
-  wLabels.forEach(function(wl, wIdx){
-    itemsHtml += '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">Every ' + dayNames[selDow] + '</span><b>' + esc(wl) + '</b></div><button class="icon" data-del-week="' + selDow + ':' + wIdx + '" aria-label="Remove weekly plan">✕</button></div>';
-  });
-  marks.forEach(function(mk, idx){
-    var typeLabel = mk.type === 'monthsary' ? 'Monthsary' : mk.type === 'birthday' ? 'Birthday' : mk.type === 'holiday' ? 'Holiday' : mk.type === 'other' ? 'Day Plan' : mk.type;
-    itemsHtml += '<div class="task" style="padding:8px 0"><div class="body"><span class="mark-badge">' + esc(typeLabel) + '</span><b>' + esc(autoCorrectCalText(mk.label || typeLabel)) + '</b></div><button class="icon" data-del-mark="' + idx + '" aria-label="Remove mark">✕</button></div>';
-  });
-  if (!itemsHtml) {
-    listEl.innerHTML = '<div class="empty" style="padding:6px">Nothing planned for this day yet. Add a class or plan above!</div>';
+  titleEl.textContent = dayNames[selDow] + ' · ' + selectedIso + ' Schedule';
+
+  var dayItems = getItemsForDate(selectedIso);
+  if (!dayItems.length) {
+    listEl.innerHTML = '<div class="empty" style="padding:10px">No events, tasks, or appointments on this day yet. Add one above!</div>';
   } else {
-    listEl.innerHTML = itemsHtml;
+    listEl.innerHTML = dayItems.map(function(it){
+      var k = it.kind || 'event';
+      var badgeCls = 'mark-badge badge-' + k;
+      var repText = it.repeat === 'weekly' ? ' · Every ' + dayNames[selDow] : ' · One-time';
+      return '<div class="sched-item"><div class="sched-time">' + esc(fmtTimeRange(it.startTime, it.endTime)) + '<small>' + esc(kindLabel(k)) + '</small></div>'
+        + '<div class="sched-body"><b>' + esc(it.title) + '</b><span class="' + badgeCls + '">' + esc(kindLabel(k) + repText) + '</span></div>'
+        + '<button class="icon" data-del-sched="' + esc(it.id) + '" aria-label="Remove item">✕</button></div>';
+    }).join('');
   }
   renderWeeklyLabels();
 }
@@ -663,44 +745,71 @@ function renderSelectedMarks(){
 function renderWeeklyLabels(){
   var box = $('weeklyLabelsList');
   if (!box) return;
-  S.weeklyLabels = S.weeklyLabels || {};
-  var order = ['1','2','3','4','5','6','0'];
-  var names = {'1':'Monday','2':'Tuesday','3':'Wednesday','4':'Thursday','5':'Friday','6':'Saturday','0':'Sunday'};
-  var out = [];
-  order.forEach(function(k){
-    (S.weeklyLabels[k] || []).forEach(function(txt, idx){
-      out.push('<div class="week-item"><div><span class="mark-badge">' + names[k] + '</span><b>' + esc(txt) + '</b></div><button class="icon" data-del-week="' + k + ':' + idx + '" aria-label="Remove weekly label">✕</button></div>');
-    });
-  });
-  box.innerHTML = out.length ? out.join('') : '<div class="empty" style="padding:6px">No weekly labels yet (e.g. Monday: PATHFIT 7am-9am).</div>';
+  var items = sortScheduleItems(S.calSchedule);
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  if (!items.length) {
+    box.innerHTML = '<div class="empty" style="padding:10px">No schedule items saved yet.</div>';
+    return;
+  }
+  box.innerHTML = items.map(function(it){
+    var whenTxt = it.repeat === 'weekly' ? ('Every ' + dayNames[+it.dow || 0]) : (it.date || '');
+    return '<div class="sched-item"><div class="sched-time">' + esc(fmtTimeRange(it.startTime, it.endTime)) + '<small>' + esc(whenTxt) + '</small></div>'
+      + '<div class="sched-body"><b>' + esc(it.title) + '</b><span class="mark-badge badge-' + esc(it.kind || 'event') + '">' + esc(kindLabel(it.kind)) + '</span></div>'
+      + '<button class="icon" data-del-sched="' + esc(it.id) + '" aria-label="Delete item">✕</button></div>';
+  }).join('');
 }
 
-if ($('saveWeekLabelBtn')) {
-  $('saveWeekLabelBtn').onclick = function(){
-    var dow = $('weekDaySelect') ? $('weekDaySelect').value : '1';
-    var txt = $('weekDayLabel') ? $('weekDayLabel').value.trim() : '';
-    if (!txt) { if ($('weekDayLabel')) $('weekDayLabel').focus(); return; }
-    S.weeklyLabels = S.weeklyLabels || {};
-    if (!S.weeklyLabels[dow]) S.weeklyLabels[dow] = [];
-    S.weeklyLabels[dow].push(txt);
-    if ($('weekDayLabel')) $('weekDayLabel').value = '';
+if ($('saveCalItemBtn')) {
+  $('saveCalItemBtn').onclick = function(){
+    var titleEl = $('calTitle');
+    var title = titleEl ? titleEl.value.trim() : '';
+    if (!title) { if (titleEl) titleEl.focus(); return; }
+    var kind = $('calKind') ? $('calKind').value : 'event';
+    var startTime = $('calStartTime') ? $('calStartTime').value : '';
+    var endTime = $('calEndTime') ? $('calEndTime').value : '';
+    var repeatMode = $('calRepeatMode') ? $('calRepeatMode').value : 'date';
+    var parts = selectedIso.split('-');
+    var selDow = new Date(+parts[0], (+parts[1]) - 1, +parts[2]).getDay();
+
+    S.calSchedule.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      title: title,
+      kind: kind,
+      startTime: startTime,
+      endTime: endTime,
+      repeat: repeatMode,
+      date: selectedIso,
+      dow: selDow
+    });
+    S.calSchedule = sortScheduleItems(S.calSchedule);
+    if (titleEl) titleEl.value = '';
     save();
     renderCalendar();
   };
 }
+
+if ($('autoArrangeBtn')) {
+  $('autoArrangeBtn').onclick = function(){
+    S.calSchedule = sortScheduleItems(S.calSchedule);
+    save();
+    renderCalendar();
+  };
+}
+
+function handleDeleteSchedule(e){
+  var btn = e.target.closest('[data-del-sched]');
+  if (!btn) return;
+  var id = btn.dataset.delSched;
+  S.calSchedule = S.calSchedule.filter(function(x){ return x.id !== id; });
+  save();
+  renderCalendar();
+}
+
+if ($('selectedDateMarks')) {
+  $('selectedDateMarks').addEventListener('click', handleDeleteSchedule);
+}
 if ($('weeklyLabelsList')) {
-  $('weeklyLabelsList').addEventListener('click', function(e){
-    var b = e.target.closest('[data-del-week]');
-    if (!b) return;
-    var parts = b.dataset.delWeek.split(':');
-    var k = parts[0], idx = +parts[1];
-    if (S.weeklyLabels && S.weeklyLabels[k]) {
-      S.weeklyLabels[k].splice(idx, 1);
-      if (!S.weeklyLabels[k].length) delete S.weeklyLabels[k];
-      save();
-      renderCalendar();
-    }
-  });
+  $('weeklyLabelsList').addEventListener('click', handleDeleteSchedule);
 }
 
 if ($('prevMonth')) {
@@ -719,15 +828,6 @@ if ($('calGrid')) {
     renderCalendar();
   });
 }
-function autoCorrectCalText(str){
-  if (!str) return '';
-  return str
-    .replace(/\bmonthsary\b/gi, 'monthsari')
-    .replace(/\banniversary\b/gi, 'anniversarii')
-    .replace(/\bchrismas\b/gi, 'xmas')
-    .replace(/\bchristmas\b/gi, 'xmas')
-    .replace(/\bnew year\b/gi, 'new yr');
-}
 
 /* Optional: if you upload a calendar background PNG (e.g. ./cal-bg.png) to GitHub, set BRAND.calBg to './cal-bg.png' */
 if (typeof BRAND !== 'undefined' && BRAND.calBg) {
@@ -740,44 +840,6 @@ if (typeof BRAND !== 'undefined' && BRAND.calBg) {
     calImgEl.onerror = function(){ calBannerEl.classList.remove('show'); };
     calBannerEl.classList.add('show');
   }
-}
-
-if ($('saveMarkBtn')) {
-  $('saveMarkBtn').onclick = function(){
-    var cat = $('markCategory') ? $('markCategory').value : 'other';
-    var rawLbl = $('markLabel') ? $('markLabel').value.trim() : '';
-    var lbl = autoCorrectCalText(rawLbl || cat);
-    if (!S.calMarks[selectedIso]) S.calMarks[selectedIso] = [];
-    S.calMarks[selectedIso].push({ type: cat, label: lbl || cat });
-    if ($('markLabel')) $('markLabel').value = '';
-    save();
-    renderCalendar();
-  };
-}
-if ($('selectedDateMarks')) {
-  $('selectedDateMarks').addEventListener('click', function(e){
-    var delWeek = e.target.closest('[data-del-week]');
-    if (delWeek) {
-      var parts = delWeek.dataset.delWeek.split(':');
-      var k = parts[0], idx = +parts[1];
-      if (S.weeklyLabels && S.weeklyLabels[k]) {
-        S.weeklyLabels[k].splice(idx, 1);
-        if (!S.weeklyLabels[k].length) delete S.weeklyLabels[k];
-        save();
-        renderCalendar();
-      }
-      return;
-    }
-    var delBtn = e.target.closest('[data-del-mark]');
-    if (!delBtn) return;
-    var i = +delBtn.dataset.delMark;
-    if (S.calMarks[selectedIso]) {
-      S.calMarks[selectedIso].splice(i, 1);
-      if (!S.calMarks[selectedIso].length) delete S.calMarks[selectedIso];
-      save();
-      renderCalendar();
-    }
-  });
 }
 
 applyBrand();render();renderCalendar();check();
