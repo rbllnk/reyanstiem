@@ -276,4 +276,1107 @@ var CONVEX_SITE_URL='https://adventurous-caterpillar-502.ap-southeast-2.convex.s
 /* OWNER-ONLY DESIGN: name, logo and alarm sound are set here by the owner. Users cannot change them. */
 var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./clock.png',calBg:'./cal-bg.png',sound:''};
 var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5,username:'',color:'#ff9ec4',friends:[],pendingRequests:[],notifications:[],sharedItems:[]};
-try{var
+try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
+if(S.name==='Tiny Tiem')S.name='Reyan’s Tiem Manager';
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){alert('Could not save. Try a smaller logo or sound file.')}}
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function cleanHandle(u){return String(u||'').trim().toLowerCase().replace(/^@+/,'').replace(/[^a-z0-9_.-]/g,'')}
+function pad(n){return n<10?'0'+n:''+n}
+function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:TZ}).format(d)}
+function hm(d){return new Intl.DateTimeFormat('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d)}
+function fmt(hmStr){
+  if(!hmStr||!/^\d{2}:\d{2}$/.test(hmStr))return hmStr||'';
+  var p=hmStr.split(':'),d=new Date();d.setHours(+p[0],+p[1],0,0);
+  return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+}
+function isDone(t){if(!t.doneAt)return false;return t.repeat?dayKey(new Date(t.doneAt))===dayKey(new Date()):true}
+
+function applyBrand(){
+$('appName').textContent=BRAND.name;document.title=BRAND.name;
+var h=BRAND.logo?'<img alt="" src="'+BRAND.logo+'">':'⏰';
+var c=BRAND.clock?'<img alt="" src="'+BRAND.clock+'">':h;
+$('logo').innerHTML=h;$('ringLogo').innerHTML=c;
+}
+
+function render(){
+var ts=S.tasks.slice().sort(function(a,b){return a.tiem<b.tiem?-1:1});
+if(!ts.length){$('list').innerHTML='<div class="empty">Nothing scheduled yet. Add your first tiem above.</div>'}
+else $('list').innerHTML=ts.map(function(t){
+var d=isDone(t);
+return '<div class="task'+(d?' done':'')+'"><div class="t">'+fmt(t.tiem)+'<small>'+(t.alarm?'alarm on':'no alarm')+(t.repeat?' · daily':'')+'</small></div>'
++'<div class="body"><b>'+esc(t.text)+'</b>'+(t.note?'<p>'+esc(t.note)+'</p>':'')
++(d?'<span class="stamp">done '+new Date(t.doneAt).toLocaleString([],{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</span>':'')+'</div>'
++'<button type="button" class="ghost" data-a="done" data-id="'+t.id+'">'+(d?'Undo':'Done')+'</button>'
++'<button type="button" class="icon" data-a="del" data-id="'+t.id+'" aria-label="Delete">✕</button></div>'}).join('');
+tickNext();
+}
+
+function tickNext(){
+var now=new Date(),cur=hm(now);
+var up=S.tasks.filter(function(t){return !isDone(t)&&t.tiem>=cur}).sort(function(a,b){return a.tiem<b.tiem?-1:1})[0];
+$('next').innerHTML=up?'Up next at <b>'+fmt(up.tiem)+'</b>: '+esc(up.text):'Nothing left for today. Rest up.';
+}
+
+$('list').addEventListener('click',function(e){
+var b=e.target.closest('button');if(!b)return;
+var t=S.tasks.find(function(x){return x.id===b.dataset.id});
+if(b.dataset.a==='del')S.tasks=S.tasks.filter(function(x){return x.id!==b.dataset.id});
+else if(t)t.doneAt=isDone(t)?null:new Date().toISOString();
+save();render();
+});
+
+$('add').onclick=function(){
+var text=$('fText').value.trim();if(!text||!$('fTime').value){$('fText').focus();return}
+S.tasks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),tiem:$('fTime').value,text:text,note:$('fNote').value.trim(),alarm:$('fAlarm').checked,repeat:$('fRepeat').checked,fired:'',snoozeUntil:0,doneAt:null});
+$('fText').value='';$('fNote').value='';save();render();
+};
+
+/* ---- alarm ---- */
+var ac,beepTimer,vibTimer,audio,queue=[],ringing=null;
+function unlock(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume()}catch(e){}}
+function playNotes(notes,wave,dur){
+if(!ac)return;
+notes.forEach(function(n){
+var s=ac.createOscillator(),g=ac.createGain();
+s.type=wave||'sine';
+s.frequency.value=n[0];
+var t0=ac.currentTime+n[1];
+var d=n[2]||dur||0.28;
+g.gain.setValueAtTime(0.0001,t0);
+g.gain.exponentialRampToValueAtTime(0.45,t0+0.02);
+g.gain.exponentialRampToValueAtTime(0.0001,t0+d);
+s.connect(g);g.connect(ac.destination);
+s.start(t0);s.stop(t0+d+0.02);
+});
+}
+function beep(){
+var tone=S.tone||'chime';
+if(tone==='bell'){
+playNotes([[659.25,0,0.45],[880,0.35,0.55],[1318.5,0.75,0.7]],'sine',0.5);
+}else if(tone==='marimba'){
+playNotes([[523.25,0,0.22],[659.25,0.2,0.22],[783.99,0.4,0.22],[1046.5,0.6,0.35]],'triangle',0.25);
+}else if(tone==='classic'){
+playNotes([[880,0,0.18],[880,0.25,0.18],[880,0.5,0.18]],'sine',0.18);
+}else{
+playNotes([[587.33,0,0.32],[739.99,0.28,0.32],[880,0.56,0.36],[1174.66,0.86,0.5]],'sine',0.35);
+}
+}
+function startSound(){stopSound();
+var src=(S.tone==='custom'&&S.customSound)?S.customSound:BRAND.sound;
+if(src){
+audio=new Audio(src);audio.loop=true;
+audio.play().catch(function(){beep();beepTimer=setInterval(beep,1800)});
+}else{
+beep();beepTimer=setInterval(beep,1800);
+}
+if(navigator.vibrate){
+navigator.vibrate([400,200,400]);
+vibTimer=setInterval(function(){if(ringing&&navigator.vibrate)navigator.vibrate([400,200,400])},2000);
+}
+}
+function stopSound(){
+clearInterval(beepTimer);clearInterval(vibTimer);
+if(audio){audio.pause();audio.currentTime=0;audio=null}
+if(navigator.vibrate)navigator.vibrate(0);
+}
+document.addEventListener('visibilitychange',function(){
+  if(ringing && document.visibilityState==='visible'){
+    unlock();
+    if(audio && audio.paused){audio.play().catch(function(){});}
+    else if(!audio && !beepTimer){startSound();}
+  }
+});
+
+function ring(t){
+queue.push(t);if(!ringing)next();
+}
+function dismissActiveAlarm(mode){
+  if(!ringing)return;
+  var current=ringing;
+  stopSound();
+  if(current.id!=='test'){
+    if(mode==='snooze'){
+      current.snoozeUntil=Date.now()+S.snooze*60000;
+    } else {
+      current.doneAt=new Date().toISOString();
+      current.snoozeUntil=0;
+    }
+    save();
+    render();
+  }
+  ringing=null;
+  next();
+}
+
+function showAlarmNotification(alarmObj){
+  if(!('Notification' in window) || Notification.permission!=='granted')return;
+  var title=alarmObj.text || 'Alarm';
+  var body=(alarmObj.note || ('It’s '+fmt(alarmObj.tiem)+'.'));
+  var opts={
+    body:body,
+    icon:'./logo.png',
+    badge:'./logo.png',
+    tag:'tiem-alarm-'+(alarmObj.id||'now'),
+    renotify:true,
+    requireInteraction:true,
+    vibrate:[400,200,400,200,400],
+    data:{alarmId:alarmObj.id||'test',tiem:alarmObj.tiem||'00:00'},
+    actions:[
+      {action:'stop',title:'End Alarm'},
+      {action:'snooze',title:'Snooze'}
+    ]
+  };
+  if(navigator.serviceWorker && navigator.serviceWorker.ready){
+    navigator.serviceWorker.ready.then(function(reg){
+      if(reg && reg.showNotification){
+        return reg.showNotification(title, opts);
+      }
+      try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
+    }).catch(function(){
+      try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
+    });
+  } else {
+    try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
+  }
+}
+
+function next(){
+ringing=queue.shift();
+if(!ringing){$('ring').classList.remove('on');return}
+$('ringText').textContent=ringing.text;$('ringNote').textContent=ringing.note||'It’s '+fmt(ringing.tiem)+'.';
+$('ring').classList.add('on');startSound();
+showAlarmNotification(ringing);
+}
+$('ringDone').onclick=function(){dismissActiveAlarm('done')};
+$('snooze').onclick=function(){dismissActiveAlarm('snooze')};
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message',function(event){
+    var data=event && event.data;
+    if(!data || data.type!=='ALARM_ACTION')return;
+    if(ringing){
+      if(data.action==='snooze') dismissActiveAlarm('snooze');
+      else dismissActiveAlarm('done');
+    } else if(data.action==='stop'){
+      stopSound();
+    }
+  });
+}
+
+function heads(t){
+$('next').innerHTML='Heads up: <b>'+esc(t.text)+'</b> starts in '+S.lead+' min';
+try{if('Notification' in window&&Notification.permission==='granted')new Notification(t.text,{body:'Starts in '+S.lead+' minutes, at '+fmt(t.tiem)})}catch(e){}
+if(navigator.vibrate)navigator.vibrate(200);
+}
+function check(){
+var now=new Date(),cur=hm(now),key=dayKey(now)+' '+cur;
+$('clock').textContent=now.toLocaleTimeString([],{timeZone:TZ,hour:'numeric',minute:'2-digit'});
+$('date').textContent=now.toLocaleDateString([],{timeZone:TZ,weekday:'long',month:'long',day:'numeric'})+', Philippine tiem';
+S.tasks.forEach(function(t){
+if(!t.alarm||isDone(t)||ringing===t||queue.indexOf(t)>-1)return;
+if(t.snoozeUntil&&Date.now()>=t.snoozeUntil){t.snoozeUntil=0;save();ring(t);return}
+if(t.tiem===cur&&t.fired!==key&&!t.snoozeUntil){t.fired=key;save();ring(t)}
+});
+if(S.lead>0)S.tasks.forEach(function(t){var pk=dayKey(now)+' '+t.tiem;
+if(t.alarm&&!isDone(t)&&t.pre!==pk&&hm(new Date(now.getTime()+S.lead*60000))===t.tiem){t.pre=pk;save();heads(t)}});
+checkCalHeadsUp(now,cur);
+if(now.getSeconds()===0)tickNext();
+}
+
+S.calFired30 = S.calFired30 || {};
+
+function minusMinutesHm(hmStr, minsBack){
+  if (!hmStr || !/^\d{2}:\d{2}$/.test(hmStr)) return '';
+  var p = hmStr.split(':');
+  var total = (+p[0]) * 60 + (+p[1]) - minsBack;
+  while (total < 0) total += 1440;
+  total = total % 1440;
+  var hh = Math.floor(total / 60);
+  var mm = total % 60;
+  return pad(hh) + ':' + pad(mm);
+}
+
+function checkCalHeadsUp(now, cur){
+  if (!Array.isArray(S.calSchedule) || !S.calSchedule.length) return;
+  var today = dayKey(now);
+  var dayItems = getItemsForDate(today);
+  dayItems.forEach(function(it){
+    if (!it.startTime) return;
+    var warnAt = minusMinutesHm(it.startTime, 30);
+    if (warnAt !== cur) return;
+    var fireKey = today + '|' + it.id + '|' + it.startTime;
+    if (S.calFired30[fireKey]) return;
+    S.calFired30[fireKey] = 1;
+    save();
+    var tRange = fmtTimeRange(it.startTime, it.endTime);
+    $('next').innerHTML = '30 min heads up: <b>' + esc(it.title) + '</b> (' + esc(kindLabel(it.kind)) + ') at ' + esc(tRange);
+    try{
+      if('Notification' in window && Notification.permission === 'granted'){
+        new Notification('In 30 min: ' + it.title, {
+          body: kindLabel(it.kind) + ' · ' + tRange
+        });
+      }
+    }catch(e){}
+    if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  });
+}
+
+setInterval(check,1000);
+
+/* ---- settings ---- */
+S.tone=S.tone||'chime';
+S.customSound=S.customSound||'';
+if($('sTone')){
+  $('sTone').value=S.tone;
+  if($('customToneRow'))$('customToneRow').style.display=(S.tone==='custom')?'flex':'none';
+  $('sTone').onchange=function(){
+    S.tone=$('sTone').value;
+    if($('customToneRow'))$('customToneRow').style.display=(S.tone==='custom')?'flex':'none';
+    save();
+    unlock();beep();
+  };
+}
+if($('sToneFile')){
+  $('sToneFile').onchange=function(e){
+    var file=e.target.files&&e.target.files[0];
+    if(!file)return;
+    var r=new FileReader();
+    r.onload=function(){
+      S.customSound=r.result;
+      S.tone='custom';
+      if($('sTone'))$('sTone').value='custom';
+      save();
+      unlock();startSound();setTimeout(stopSound,2500);
+    };
+    r.readAsDataURL(file);
+  };
+}
+$('sSnooze').value=S.snooze;$('sLead').value=S.lead;
+
+$('sSnooze').onchange=function(){S.snooze=Math.max(1,Math.min(60,+$('sSnooze').value||5));save()};
+$('sLead').onchange=function(){var v=parseInt($('sLead').value,10);S.lead=isNaN(v)?5:Math.max(0,Math.min(60,v));save()};
+
+$('perm').onclick=function(){unlock();beep();try{if('Notification' in window)Notification.requestPermission()}catch(e){}};
+$('test').onclick=function(){unlock();ring({id:'test',text:'Test alarm',note:'This is what your reminder will look like.',tiem:'00:00'})};
+document.addEventListener('click',unlock,{once:true});
+
+var SURPRISE_ALL_DONE=[
+  'you finished every single tiem on today’s list—so proud of you! taek a deep breath, rest, nd doomscroll na bozz',
+  'all scheduled tiems complete! u showed up for urself today, nd that deserves ril rest. mwa',
+  'everything on ur list is checked off! relax without guilt. :)'
+];
+var SURPRISE_EMPTY=[
+  'ur schedule is quiet right now... whenever you’re ready, add a gentle tiem or a smol cozy goal.',
+  'nothing on the board yet! gou drink watur, stretch, or plan 1 little thing u want to do.',
+  'blank canvas for your tiem today... add a reminder wehnever sumthing comes up so yew dont havb to hold it in ur head'
+];
+var SURPRISE_MORNING=[
+  'gud morningg! taek it slow, drink sum watur, nd be kind to yourself todie.. i love youu',
+  'guddmoringg! youve got dis.',
+  'gudd morningg! start w waht feels manageable first nd protect ur peace thry da day.'
+];
+var SURPRISE_MEAL=[
+  'gud tiem to eat—dont skip meals nd eatwhaell',
+  'food check! grab sumthing warm nd take ur tiem eating.'
+];
+var SURPRISE_NIGHT=[
+  'sleep reminder: screens down soon bozz... let ur body rest for tomorrow’s tiem.',
+  'slep tiem check... doomscroll, stretch a little, nd get sum rest so u wake up lighter.'
+];
+var SURPRISE_PROGRESS=[
+  'youre doing better than u think todie... am so proud of u',
+  'even smol progress counts on a busy tiem.',
+  'yew dont hab to rush vrything at once... jus focus on da next tiem ahead.'
+];
+var DAILY_SURPRISE_LINE='wag k n magpa generaet kai chatgpt ng shed mu';
+
+S.calMarks = S.calMarks || {};
+S.lastAutoSurprise = S.lastAutoSurprise || '';
+
+function tiemSeed(d){
+  var k = dayKey(d);
+  var s = 0;
+  for (var i=0; i<k.length; i++) s += k.charCodeAt(i);
+  return s;
+}
+
+function getSurpriseByTiem(now){
+  var parts = hm(now).split(':');
+  var mins = (+parts[0])*60 + (+parts[1]);
+  var seed = tiemSeed(now);
+  var total = S.tasks.length;
+  var doneCount = S.tasks.filter(function(t){return isDone(t)}).length;
+  var msg = '';
+
+  if (mins >= 300 && mins < 660) {
+    msg = SURPRISE_MORNING[seed % SURPRISE_MORNING.length];
+  } else if ((mins >= 720 && mins < 810) || (mins >= 1110 && mins < 1200)) {
+    msg = SURPRISE_MEAL[(seed + mins) % SURPRISE_MEAL.length];
+  } else if (mins >= 1290 || mins < 270) {
+    msg = SURPRISE_NIGHT[seed % SURPRISE_NIGHT.length];
+  } else if (total === 0) {
+    msg = SURPRISE_EMPTY[seed % SURPRISE_EMPTY.length];
+  } else if (doneCount === total) {
+    msg = SURPRISE_ALL_DONE[seed % SURPRISE_ALL_DONE.length];
+  } else {
+    msg = SURPRISE_PROGRESS[(seed + doneCount) % SURPRISE_PROGRESS.length];
+  }
+
+  if (((seed * 5 + mins) % 7) === 0) {
+    msg = msg + ' · ' + DAILY_SURPRISE_LINE;
+  }
+  return msg;
+}
+
+var origTickNext = tickNext;
+tickNext = function(){
+  var now = new Date();
+  var cur = hm(now);
+  var up = S.tasks.filter(function(t){return !isDone(t)&&t.tiem>=cur}).sort(function(a,b){return a.tiem<b.tiem?-1:1})[0];
+  if (up) {
+    $('next').innerHTML = 'Up next at <b>' + fmt(up.tiem) + '</b>: ' + esc(up.text);
+  } else {
+    $('next').innerHTML = esc(getSurpriseByTiem(now));
+  }
+};
+
+var origCheck = check;
+check = function(){
+  origCheck();
+  var now = new Date();
+  var dk = dayKey(now);
+  var slotKey = dk + '-' + hm(now);
+  if (now.getSeconds() === 0 && S.lastAutoSurprise !== slotKey) {
+    S.lastAutoSurprise = slotKey;
+    save();
+    tickNext();
+  }
+};
+
+/* ---- Separate Calendar View + Smooth Swipe ---- */
+var isCalOpen = false;
+var viewDate = new Date();
+var selectedIso = dayKey(new Date());
+
+S.calSchedule = Array.isArray(S.calSchedule) ? S.calSchedule : [];
+
+function migrateLegacyCalData(){
+  var migrated = false;
+  if (S.calMarks && typeof S.calMarks === 'object') {
+    Object.keys(S.calMarks).forEach(function(iso){
+      (S.calMarks[iso] || []).forEach(function(mk){
+        var kind = (mk.type === 'task') ? 'task' : (mk.type === 'appointment') ? 'appointment' : 'event';
+        S.calSchedule.push({
+          id: 'm_' + iso + '_' + Math.random().toString(36).slice(2,7),
+          title: String(mk.label || mk.type || 'Schedule item'),
+          kind: kind,
+          startTime: '09:00',
+          endTime: '',
+          repeat: 'date',
+          date: iso,
+          dow: new Date(iso + 'T12:00:00').getDay(),
+          shared: false,
+          author: S.username || ''
+        });
+        migrated = true;
+      });
+    });
+    S.calMarks = {};
+  }
+  if (S.weeklyLabels && typeof S.weeklyLabels === 'object') {
+    Object.keys(S.weeklyLabels).forEach(function(k){
+      (S.weeklyLabels[k] || []).forEach(function(txt){
+        S.calSchedule.push({
+          id: 'w_' + k + '_' + Math.random().toString(36).slice(2,7),
+          title: String(txt),
+          kind: 'event',
+          startTime: '09:00',
+          endTime: '',
+          repeat: 'weekly',
+          date: '',
+          dow: +k,
+          shared: false,
+          author: S.username || ''
+        });
+        migrated = true;
+      });
+    });
+    S.weeklyLabels = {};
+  }
+  if (migrated) save();
+}
+migrateLegacyCalData();
+
+function timeToMins(t){
+  if (!t || !/^\d{2}:\d{2}$/.test(t)) return 24 * 60 + 1;
+  var p = t.split(':');
+  return (+p[0]) * 60 + (+p[1]);
+}
+
+function fmtTimeRange(st, et){
+  if (!st && !et) return 'All day';
+  var sStr = st ? fmt(st) : '';
+  var eStr = et ? fmt(et) : '';
+  if (sStr && eStr) return sStr + ' – ' + eStr;
+  return sStr || eStr;
+}
+
+function sortScheduleItems(items){
+  return items.slice().sort(function(a, b){
+    var ma = timeToMins(a.startTime);
+    var mb = timeToMins(b.startTime);
+    if (ma !== mb) return ma - mb;
+    return String(a.title || '').localeCompare(String(b.title || ''));
+  });
+}
+
+function getAllCombinedCalendarItems(){
+  var localItems = (S.calSchedule || []).map(function(it){ return Object.assign({source:'local'}, it); });
+  var remoteItems = (S.sharedItems || []).map(function(it){
+    return Object.assign({
+      id: 'srv_' + (it.clientId || it._id || Math.random().toString(36).slice(2,7)),
+      source: 'shared'
+    }, it);
+  });
+  var byKey = new Map();
+  localItems.forEach(function(it){ byKey.set(it.clientId || it.id, it); });
+  remoteItems.forEach(function(it){
+    var k = it.clientId || it.id;
+    if (!byKey.has(k)) byKey.set(k, it);
+  });
+  return Array.from(byKey.values());
+}
+
+function getItemsForDate(iso){
+  var parts = iso.split('-');
+  var dow = new Date(+parts[0], (+parts[1]) - 1, +parts[2]).getDay();
+  var combined = getAllCombinedCalendarItems();
+  var matching = combined.filter(function(item){
+    if (item.repeat === 'weekly') return +item.dow === dow;
+    return item.date === iso;
+  });
+  return sortScheduleItems(matching);
+}
+
+function kindLabel(k){
+  if (k === 'task') return 'Task';
+  if (k === 'appointment') return 'Appointment schedule';
+  if (k === 'monthsary') return 'Monthsary';
+  if (k === 'anniversary') return 'Anniversary';
+  return 'Event';
+}
+
+function setCalView(openCal){
+  isCalOpen = !!openCal;
+  var track = $('pagerTrack');
+  var btn = $('viewSwitchBtn');
+  if (track) track.classList.toggle('show-cal', isCalOpen);
+  if (btn) btn.textContent = isCalOpen ? 'Tiem' : 'Calendar';
+}
+
+if ($('viewSwitchBtn')) {
+  $('viewSwitchBtn').onclick = function(){ setCalView(!isCalOpen); };
+}
+
+var touchStartX = 0, touchStartY = 0, swiping = false, horizontalLock = false;
+var pagerEl = $('pager');
+if (pagerEl) {
+  var suppressNextClick = false;
+  pagerEl.addEventListener('click', function(e){
+    if (suppressNextClick) {
+      suppressNextClick = false;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
+  pagerEl.addEventListener('touchstart', function(e){
+    if (!e.touches || !e.touches.length) return;
+    if (e.target && e.target.closest('input, select, textarea')) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    swiping = true;
+    horizontalLock = false;
+  }, {passive:true});
+
+  pagerEl.addEventListener('touchmove', function(e){
+    if (!swiping || !e.touches || !e.touches.length) return;
+    var dx = e.touches[0].clientX - touchStartX;
+    var dy = e.touches[0].clientY - touchStartY;
+    if (!horizontalLock) {
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+        horizontalLock = true;
+        suppressNextClick = true;
+        var tr = $('pagerTrack');
+        if (tr) tr.classList.add('dragging');
+      } else if (Math.abs(dy) > 14) {
+        swiping = false;
+        return;
+      }
+    }
+    if (horizontalLock) {
+      var tr2 = $('pagerTrack');
+      var w = pagerEl.clientWidth || 1;
+      var basePct = isCalOpen ? -50 : 0;
+      var deltaPct = (dx / w) * 50;
+      var nextPct = Math.max(-50, Math.min(0, basePct + deltaPct));
+      if (tr2) tr2.style.transform = 'translateX(' + nextPct + '%)';
+    }
+  }, {passive:true});
+
+  function finishSwipe(e){
+    if (!swiping) return;
+    var wasLocked = horizontalLock;
+    swiping = false;
+    horizontalLock = false;
+    var tr = $('pagerTrack');
+    if (tr) {
+      tr.classList.remove('dragging');
+      tr.style.transform = '';
+    }
+    if (wasLocked) {
+      setTimeout(function(){ suppressNextClick = false; }, 60);
+    } else {
+      suppressNextClick = false;
+    }
+    if (!wasLocked || !e.changedTouches || !e.changedTouches.length) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 0.9) {
+      if (dx < 0 && !isCalOpen) setCalView(true);
+      else if (dx > 0 && isCalOpen) setCalView(false);
+    }
+  }
+
+  pagerEl.addEventListener('touchend', finishSwipe, {passive:true});
+  pagerEl.addEventListener('touchcancel', finishSwipe, {passive:true});
+}
+
+function isoFromYMD(y, m, d){
+  return y + '-' + pad(m + 1) + '-' + pad(d);
+}
+
+function renderCalendar(){
+  var grid = $('calGrid');
+  var label = $('calMonthLabel');
+  if (!grid || !label) return;
+
+  S.calSchedule = sortScheduleItems(S.calSchedule);
+  var y = viewDate.getFullYear();
+  var m = viewDate.getMonth();
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  label.textContent = monthNames[m] + ' ' + y;
+
+  var dows = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var htmlOut = dows.map(function(d){ return '<div class="cal-dow">' + d + '</div>'; }).join('');
+
+  var firstDow = new Date(y, m, 1).getDay();
+  var daysInMonth = new Date(y, m + 1, 0).getDate();
+  var prevDays = new Date(y, m, 0).getDate();
+  var todayIso = dayKey(new Date());
+
+  for (var i = firstDow - 1; i >= 0; i--) {
+    var pd = prevDays - i;
+    var py = m === 0 ? y - 1 : y;
+    var pm = m === 0 ? 11 : m - 1;
+    var pIso = isoFromYMD(py, pm, pd);
+    htmlOut += '<button type="button" class="cal-day muted" data-iso="' + pIso + '"><div class="cal-day-num">' + pd + '</div></button>';
+  }
+
+  for (var d = 1; d <= daysInMonth; d++) {
+    var iso = isoFromYMD(y, m, d);
+    var dayItems = getItemsForDate(iso);
+    var cls = 'cal-day';
+    if (iso === todayIso) cls += ' today';
+    if (iso === selectedIso) cls += ' selected';
+    var chipsHtml = dayItems.map(function(it){
+      var k = it.kind || 'event';
+      var tShort = it.startTime ? fmt(it.startTime) : '';
+      return '<span class="cal-chip type-' + esc(k) + '">' + (tShort ? '<span class="cal-chip-time">' + esc(tShort) + '</span>' : '') + esc(it.title) + '</span>';
+    }).join('');
+    htmlOut += '<button type="button" class="cal-day' + cls.slice(7) + '" data-iso="' + iso + '"><div class="cal-day-num"><span>' + d + '</span></div>' + chipsHtml + '</button>';
+  }
+
+  var totalCells = firstDow + daysInMonth;
+  var trailing = (7 - (totalCells % 7)) % 7;
+  for (var tDay = 1; tDay <= trailing; tDay++) {
+    var ny = m === 11 ? y + 1 : y;
+    var nm = m === 11 ? 0 : m + 1;
+    var nIso = isoFromYMD(ny, nm, tDay);
+    htmlOut += '<button type="button" class="cal-day muted" data-iso="' + nIso + '"><div class="cal-day-num">' + tDay + '</div></button>';
+  }
+
+  grid.innerHTML = htmlOut;
+  renderSelectedMarks();
+}
+
+function renderSelectedMarks(){
+  var titleEl = $('selectedDateTitle');
+  var listEl = $('selectedDateMarks');
+  if (!titleEl || !listEl) return;
+  var p = selectedIso.split('-');
+  var selDow = new Date(+p[0], (+p[1]) - 1, +p[2]).getDay();
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  titleEl.textContent = dayNames[selDow] + ' · ' + selectedIso + ' Schedule';
+
+  var dayItems = getItemsForDate(selectedIso);
+  if (!dayItems.length) {
+    listEl.innerHTML = '<div class="empty" style="padding:10px">No events, tasks, or appointments on this day yet. Add one above!</div>';
+  } else {
+    listEl.innerHTML = dayItems.map(function(it){
+      var k = it.kind || 'event';
+      var badgeCls = 'mark-badge badge-' + k;
+      var repText = it.repeat === 'weekly' ? ' · Every ' + dayNames[selDow] : ' · One-time';
+      var shareText = it.shared ? (' · Shared by @' + (it.author || 'friend')) : '';
+      var canDelete = it.source !== 'shared';
+      return '<div class="sched-item"><div class="sched-time">' + esc(fmtTimeRange(it.startTime, it.endTime)) + '<small>' + esc(kindLabel(k)) + '</small></div>'
+        + '<div class="sched-body"><b>' + esc(it.title) + '</b><span class="' + badgeCls + '">' + esc(kindLabel(k) + repText + shareText) + '</span></div>'
+        + (canDelete ? '<button type="button" class="icon" data-del-sched="' + esc(it.id) + '" aria-label="Remove item">✕</button>' : '') + '</div>';
+    }).join('');
+  }
+}
+
+if ($('saveCalItemBtn')) {
+  $('saveCalItemBtn').onclick = async function(){
+    var titleEl = $('calTitle');
+    var title = titleEl ? titleEl.value.trim() : '';
+    if (!title) { if (titleEl) titleEl.focus(); return; }
+    var kind = $('calKind') ? $('calKind').value : 'event';
+    var startTime = $('calStartTime') ? $('calStartTime').value : '';
+    var endTime = $('calEndTime') ? $('calEndTime').value : '';
+    var repeatMode = $('calRepeatMode') ? $('calRepeatMode').value : 'date';
+    var shared = $('calShared') ? !!$('calShared').checked : false;
+    var parts = selectedIso.split('-');
+    var selDow = new Date(+parts[0], (+parts[1]) - 1, +parts[2]).getDay();
+    var clientId = 'evt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+    var author = cleanHandle(S.username) || 'user';
+
+    S.calSchedule.push({
+      id: clientId,
+      clientId: clientId,
+      title: title,
+      kind: kind,
+      startTime: startTime,
+      endTime: endTime,
+      repeat: repeatMode,
+      date: selectedIso,
+      dow: selDow,
+      shared: shared,
+      author: author
+    });
+    S.calSchedule = sortScheduleItems(S.calSchedule);
+    if (titleEl) titleEl.value = '';
+    save();
+    renderCalendar();
+
+    if (shared && cleanHandle(S.username)) {
+      await convexPost('/api/calendar-item', {
+        clientId: clientId,
+        title: title,
+        kind: kind,
+        startTime: startTime,
+        endTime: endTime,
+        repeat: repeatMode,
+        date: selectedIso,
+        dow: selDow,
+        shared: true,
+        author: cleanHandle(S.username)
+      });
+      await convexSyncUser(S.username);
+    }
+  };
+}
+
+if ($('autoArrangeBtn')) {
+  $('autoArrangeBtn').onclick = function(){
+    S.calSchedule = sortScheduleItems(S.calSchedule);
+    save();
+    renderCalendar();
+  };
+}
+
+function handleDeleteSchedule(e){
+  var btn = e.target.closest('[data-del-sched]');
+  if (!btn) return;
+  var id = btn.dataset.delSched;
+  S.calSchedule = S.calSchedule.filter(function(x){ return x.id !== id && x.clientId !== id; });
+  save();
+  renderCalendar();
+}
+
+if ($('selectedDateMarks')) {
+  $('selectedDateMarks').addEventListener('click', handleDeleteSchedule);
+}
+
+if ($('prevMonth')) {
+  $('prevMonth').onclick = function(){ viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1); renderCalendar(); };
+}
+if ($('nextMonth')) {
+  $('nextMonth').onclick = function(){ viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1); renderCalendar(); };
+}
+if ($('calGrid')) {
+  $('calGrid').addEventListener('click', function(e){
+    var btn = e.target.closest('.cal-day');
+    if (!btn || !btn.dataset.iso) return;
+    selectedIso = btn.dataset.iso;
+    var parts = selectedIso.split('-');
+    viewDate = new Date(+parts[0], (+parts[1]) - 1, 1);
+    renderCalendar();
+  });
+}
+
+/* ---- Convex Social, Calendar & Chat Sync ---- */
+async function convexPost(path, payload) {
+  try {
+    const res = await fetch(`${CONVEX_SITE_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload || {}),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Convex POST error:", path, err);
+    return { ok: false, error: "Network error reaching Convex" };
+  }
+}
+
+function setBellOpen(open){
+  var pop = $('bellPopover');
+  var btn = $('bellBtn');
+  if (pop) pop.classList.toggle('open', !!open);
+  if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function renderSocialUI(){
+  if ($('myUsernameInput') && document.activeElement !== $('myUsernameInput')) {
+    $('myUsernameInput').value = S.username || '';
+  }
+  if ($('myColorInput') && S.color) {
+    $('myColorInput').value = S.color;
+  }
+
+  var pending = Array.isArray(S.pendingRequests) ? S.pendingRequests : [];
+  var notifs = Array.isArray(S.notifications) ? S.notifications : [];
+  var unreadCount = pending.length + notifs.filter(function(n){ return !n.read; }).length;
+  if ($('bellCount')) $('bellCount').textContent = String(unreadCount);
+
+  var friends = Array.isArray(S.friends) ? S.friends : [];
+  if ($('friendsList')) {
+    if (!friends.length) {
+      $('friendsList').innerHTML = '<div class="sync-status">No friends connected yet.</div>';
+    } else {
+      $('friendsList').innerHTML = friends.map(function(f){
+        return '<span class="friend-pill"><span class="friend-dot" style="background:' + esc(f.color || '#4cc9f0') + '"></span>@' + esc(f.username) + '</span>';
+      }).join('');
+    }
+  }
+
+  if ($('notifBox')) {
+    if (!pending.length && !notifs.length) {
+      $('notifBox').innerHTML = '<div class="empty" style="padding:8px">No friend requests or notifications yet.</div>';
+    } else {
+      var reqHtml = pending.map(function(r){
+        return '<div class="notif-item"><b>@' + esc(r.fromUser) + '</b> sent a friend request '
+          + '<button type="button" class="small" data-req-id="' + esc(r.id) + '" data-accept="true">Accept</button> '
+          + '<button type="button" class="ghost small" data-req-id="' + esc(r.id) + '" data-accept="false">Decline</button></div>';
+      }).join('');
+      var nHtml = notifs.map(function(n){
+        return '<div class="notif-item">' + esc(n.message) + '</div>';
+      }).join('');
+      $('notifBox').innerHTML = reqHtml + nHtml;
+    }
+  }
+
+  renderChatFriendOptions();
+}
+
+async function convexSyncUser(username) {
+  const clean = cleanHandle(username || S.username);
+  if (!clean) {
+    if ($('syncStatus')) $('syncStatus').textContent = 'Set a username to sync friends and shared items.';
+    renderSocialUI();
+    return null;
+  }
+  try {
+    const res = await fetch(`${CONVEX_SITE_URL}/api/sync?username=${encodeURIComponent(clean)}`);
+    const data = await res.json();
+    if (data && !data.error) {
+      S.friends = Array.isArray(data.friends) ? data.friends : [];
+      S.pendingRequests = Array.isArray(data.pendingRequests) ? data.pendingRequests : [];
+      S.notifications = Array.isArray(data.notifications) ? data.notifications : [];
+      S.sharedItems = Array.isArray(data.sharedItems) ? data.sharedItems : [];
+      save();
+      renderCalendar();
+      renderSocialUI();
+      if ($('syncStatus')) $('syncStatus').textContent = 'Synced as @' + clean + ' · ' + new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    }
+    return data;
+  } catch (err) {
+    console.error("Convex SYNC error:", err);
+    if ($('syncStatus')) $('syncStatus').textContent = 'Could not reach Convex sync server.';
+    return null;
+  }
+}
+
+if ($('saveProfileBtn')) {
+  $('saveProfileBtn').onclick = async function(){
+    var u = cleanHandle($('myUsernameInput') ? $('myUsernameInput').value : '');
+    var col = $('myColorInput') ? $('myColorInput').value : '#ff9ec4';
+    if (!u) { if ($('myUsernameInput')) $('myUsernameInput').focus(); return; }
+    S.username = u;
+    S.color = col;
+    save();
+    var r = await convexPost('/api/register', { username: u, color: col });
+    if (r && r.ok) {
+      await convexSyncUser(u);
+    } else if ($('syncStatus')) {
+      $('syncStatus').textContent = (r && r.error) || 'Could not save profile.';
+    }
+  };
+}
+
+if ($('sendFriendReqBtn')) {
+  $('sendFriendReqBtn').onclick = async function(){
+    var me = cleanHandle(S.username || ($('myUsernameInput') ? $('myUsernameInput').value : ''));
+    var to = cleanHandle($('friendHandleInput') ? $('friendHandleInput').value : '');
+    if (!me) { alert('Enter and save your username first.'); return; }
+    if (!to) { if ($('friendHandleInput')) $('friendHandleInput').focus(); return; }
+    S.username = me;
+    save();
+    var r = await convexPost('/api/friend-request', { fromUser: me, toUser: to, color: S.color || '#ff9ec4' });
+    if (r && r.ok) {
+      if ($('friendHandleInput')) $('friendHandleInput').value = '';
+      if ($('syncStatus')) $('syncStatus').textContent = 'Friend request sent to @' + to;
+      await convexSyncUser(me);
+    } else if ($('syncStatus')) {
+      $('syncStatus').textContent = (r && r.error) || 'Could not send request.';
+    }
+  };
+}
+
+if ($('notifBox')) {
+  $('notifBox').addEventListener('click', async function(e){
+    var btn = e.target.closest('button[data-req-id]');
+    if (!btn) return;
+    var me = cleanHandle(S.username);
+    var reqId = btn.dataset.reqId;
+    var accept = btn.dataset.accept === 'true';
+    await convexPost('/api/respond-request', { username: me, requestId: reqId, accept: accept });
+    await convexSyncUser(me);
+  });
+}
+
+if ($('bellBtn')) {
+  $('bellBtn').onclick = async function(e){
+    e.stopPropagation();
+    var pop = $('bellPopover');
+    var nextOpen = pop ? !pop.classList.contains('open') : true;
+    setBellOpen(nextOpen);
+    if (nextOpen && cleanHandle(S.username)) {
+      await convexSyncUser(S.username);
+    }
+  };
+}
+
+if ($('bellRefreshBtn')) {
+  $('bellRefreshBtn').onclick = async function(e){
+    e.stopPropagation();
+    if (cleanHandle(S.username)) {
+      await convexSyncUser(S.username);
+    } else {
+      renderSocialUI();
+    }
+  };
+}
+
+document.addEventListener('click', function(e){
+  var pop = $('bellPopover');
+  if (!pop || !pop.classList.contains('open')) return;
+  if (!e.target.closest('#bellPopover') && !e.target.closest('#bellBtn')) {
+    setBellOpen(false);
+  }
+});
+
+if ($('syncNowBtn')) {
+  $('syncNowBtn').onclick = async function(){
+    var u = cleanHandle($('myUsernameInput') ? $('myUsernameInput').value : S.username);
+    if (u) { S.username = u; save(); }
+    await convexSyncUser(u);
+  };
+}
+
+/* ---- Real-Time Friend Chat Bubble ---- */
+var activeChatFriend = '';
+var chatPollTimer = null;
+
+function renderChatFriendOptions(){
+  var sel = $('chatFriendSelect');
+  if (!sel) return;
+  var friends = Array.isArray(S.friends) ? S.friends : [];
+  if (!friends.length) {
+    sel.innerHTML = '<option value="">No friends yet</option>';
+    activeChatFriend = '';
+    return;
+  }
+  if (!activeChatFriend || !friends.some(function(f){ return cleanHandle(f.username) === cleanHandle(activeChatFriend); })) {
+    activeChatFriend = cleanHandle(friends[0].username);
+  }
+  sel.innerHTML = friends.map(function(f){
+    var h = cleanHandle(f.username);
+    var selectedAttr = (h === cleanHandle(activeChatFriend)) ? ' selected' : '';
+    return '<option value="' + esc(h) + '"' + selectedAttr + '>@' + esc(h) + '</option>';
+  }).join('');
+}
+
+async function loadChatMessages(){
+  var box = $('chatMessages');
+  var me = cleanHandle(S.username);
+  var them = cleanHandle(activeChatFriend || ($('chatFriendSelect') ? $('chatFriendSelect').value : ''));
+  if (!box) return;
+  if (!me) {
+    box.innerHTML = '<div class="empty">Save your username in Friends &amp; Sync first.</div>';
+    return;
+  }
+  if (!them) {
+    box.innerHTML = '<div class="empty">Add and accept a friend first to chat.</div>';
+    return;
+  }
+  try {
+    var res = await fetch(CONVEX_SITE_URL + '/api/messages?userA=' + encodeURIComponent(me) + '&userB=' + encodeURIComponent(them));
+    var data = await res.json();
+    var msgs = (data && Array.isArray(data.messages)) ? data.messages : [];
+    if (!msgs.length) {
+      box.innerHTML = '<div class="empty">No messages with @' + esc(them) + ' yet. Say hi!</div>';
+      return;
+    }
+    var wasNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 48;
+    box.innerHTML = msgs.map(function(m){
+      var isMe = cleanHandle(m.fromUser) === me;
+      return '<div class="chat-bubble ' + (isMe ? 'me' : 'them') + '">' + esc(m.text) + '</div>';
+    }).join('');
+    if (wasNearBottom) box.scrollTop = box.scrollHeight;
+  } catch (err) {
+    console.error('Chat fetch error:', err);
+  }
+}
+
+function setChatOpen(open){
+  var drawer = $('chatDrawer');
+  if (!drawer) return;
+  drawer.classList.toggle('open', !!open);
+  renderChatFriendOptions();
+  if (open) {
+    loadChatMessages();
+    clearInterval(chatPollTimer);
+    chatPollTimer = setInterval(loadChatMessages, 3000);
+  } else {
+    clearInterval(chatPollTimer);
+    chatPollTimer = null;
+  }
+}
+
+if ($('chatFabBtn')) {
+  $('chatFabBtn').onclick = function(){
+    var drawer = $('chatDrawer');
+    setChatOpen(drawer ? !drawer.classList.contains('open') : true);
+  };
+}
+if ($('chatCloseBtn')) {
+  $('chatCloseBtn').onclick = function(){ setChatOpen(false); };
+}
+if ($('chatFriendSelect')) {
+  $('chatFriendSelect').onchange = function(){
+    activeChatFriend = cleanHandle($('chatFriendSelect').value);
+    loadChatMessages();
+  };
+}
+if ($('chatSendBtn')) {
+  $('chatSendBtn').onclick = async function(){
+    var inp = $('chatInput');
+    var text = inp ? inp.value.trim() : '';
+    var me = cleanHandle(S.username);
+    var them = cleanHandle(activeChatFriend || ($('chatFriendSelect') ? $('chatFriendSelect').value : ''));
+    if (!text || !me || !them) return;
+    if (inp) inp.value = '';
+    var r = await convexPost('/api/send-message', { fromUser: me, toUser: them, text: text });
+    if (r && r.ok) {
+      await loadChatMessages();
+      var box = $('chatMessages');
+      if (box) box.scrollTop = box.scrollHeight;
+    }
+  };
+}
+if ($('chatInput')) {
+  $('chatInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && $('chatSendBtn')) {
+      e.preventDefault();
+      $('chatSendBtn').click();
+    }
+  });
+}
+
+/* Optional: if you upload a calendar background PNG (e.g. ./cal-bg.png) to GitHub, set BRAND.calBg to './cal-bg.png' */
+if (typeof BRAND !== 'undefined' && BRAND.calBg) {
+  var calCardEl = $('calCard');
+  var calBannerEl = $('calArtBanner');
+  var calImgEl = $('calArtImg');
+  if (calCardEl) calCardEl.classList.add('has-cal-bg');
+  if (calBannerEl && calImgEl) {
+    calImgEl.src = BRAND.calBg;
+    calImgEl.onerror = function(){ calBannerEl.classList.remove('show'); };
+    calBannerEl.classList.add('show');
+  }
+}
+
+applyBrand();render();renderCalendar();renderSocialUI();check();
+if (cleanHandle(S.username)) {
+  convexSyncUser(S.username);
+  setInterval(function(){ convexSyncUser(S.username); }, 15000);
+}
+
+/* ---- PWA install & offline service worker ---- */
+var deferredPrompt=null;
+function isStandaloneApp(){
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+}
+function syncBottomInstall(){
+  var wrap=$('bottomInstallWrap');
+  if(wrap)wrap.style.display=isStandaloneApp()?'none':'block';
+}
+syncBottomInstall();
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredPrompt=e;
+  syncBottomInstall();
+});
+function triggerInstall(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(){
+      deferredPrompt=null;
+      syncBottomInstall();
+    });
+  } else {
+    alert('To install: on Android/Windows tap your browser menu (⋮ or ...) and choose "Install app" or "Add to Home Screen"; on iPhone Safari tap Share then "Add to Home Screen".');
+  }
+}
+if($('bottomInstallBtn')){
+  $('bottomInstallBtn').onclick=triggerInstall;
+}
+window.addEventListener('appinstalled',function(){
+  deferredPrompt=null;
+  syncBottomInstall();
+});
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
+
+document.querySelectorAll('input, textarea').forEach(function(el){
+  if (el.placeholder) el.placeholder = el.placeholder.replace(/\bcute\s+/gi, '');
+});
+</script>
+</body>
+</html>
