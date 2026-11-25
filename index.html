@@ -275,9 +275,10 @@ var TZ='Asia/Manila';
 var CONVEX_SITE_URL='https://adventurous-caterpillar-502.ap-southeast-2.convex.site';
 /* OWNER-ONLY DESIGN: name, logo and alarm sound are set here by the owner. Users cannot change them. */
 var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./clock.png',calBg:'./cal-bg.png',sound:''};
-var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5,username:'',color:'#ff9ec4',friends:[],pendingRequests:[],notifications:[],sharedItems:[]};
+var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5,username:'',color:'#ff9ec4',friends:[],pendingRequests:[],notifications:[],sharedItems:[],dismissedCalIds:[]};
 try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
 if(S.name==='Tiny Tiem')S.name='Reyan’s Tiem Manager';
+S.dismissedCalIds=Array.isArray(S.dismissedCalIds)?S.dismissedCalIds:[];
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){alert('Could not save. Try a smaller logo or sound file.')}}
 var $=function(i){return document.getElementById(i)};
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -658,8 +659,18 @@ check = function(){
 var isCalOpen = false;
 var viewDate = new Date();
 var selectedIso = dayKey(new Date());
+var lastDeletedCalItem = null;
 
 S.calSchedule = Array.isArray(S.calSchedule) ? S.calSchedule : [];
+
+function itemKeys(it){
+  return [it.clientId, it.id, it._id].filter(Boolean).map(String);
+}
+
+function isDismissedCalItem(it){
+  var dismissed = new Set((S.dismissedCalIds || []).map(String));
+  return itemKeys(it).some(function(k){ return dismissed.has(k); });
+}
 
 function migrateLegacyCalData(){
   var migrated = false;
@@ -732,13 +743,17 @@ function sortScheduleItems(items){
 }
 
 function getAllCombinedCalendarItems(){
-  var localItems = (S.calSchedule || []).map(function(it){ return Object.assign({source:'local'}, it); });
-  var remoteItems = (S.sharedItems || []).map(function(it){
-    return Object.assign({
-      id: 'srv_' + (it.clientId || it._id || Math.random().toString(36).slice(2,7)),
-      source: 'shared'
-    }, it);
-  });
+  var localItems = (S.calSchedule || [])
+    .filter(function(it){ return !isDismissedCalItem(it); })
+    .map(function(it){ return Object.assign({source:'local'}, it); });
+  var remoteItems = (S.sharedItems || [])
+    .filter(function(it){ return !isDismissedCalItem(it); })
+    .map(function(it){
+      return Object.assign({
+        id: 'srv_' + (it.clientId || it._id || Math.random().toString(36).slice(2,7)),
+        source: 'shared'
+      }, it);
+    });
   var byKey = new Map();
   localItems.forEach(function(it){ byKey.set(it.clientId || it.id, it); });
   remoteItems.forEach(function(it){
@@ -920,19 +935,23 @@ function renderSelectedMarks(){
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   titleEl.textContent = dayNames[selDow] + ' · ' + selectedIso + ' Schedule';
 
+  var undoBar = lastDeletedCalItem
+    ? '<div class="row" style="margin-bottom:8px"><span class="sync-status">Removed "' + esc(lastDeletedCalItem.title || 'item') + '"</span><button type="button" class="ghost small" data-undo-sched="1">Undo</button></div>'
+    : '';
+
   var dayItems = getItemsForDate(selectedIso);
   if (!dayItems.length) {
-    listEl.innerHTML = '<div class="empty" style="padding:10px">No events, tasks, or appointments on this day yet. Add one above!</div>';
+    listEl.innerHTML = undoBar + '<div class="empty" style="padding:10px">No events, tasks, or appointments on this day yet. Add one above!</div>';
   } else {
-    listEl.innerHTML = dayItems.map(function(it){
+    listEl.innerHTML = undoBar + dayItems.map(function(it){
       var k = it.kind || 'event';
       var badgeCls = 'mark-badge badge-' + k;
       var repText = it.repeat === 'weekly' ? ' · Every ' + dayNames[selDow] : ' · One-time';
       var shareText = it.shared ? (' · Shared by @' + (it.author || 'friend')) : '';
-      var canDelete = it.source !== 'shared';
+      var itemKey = it.clientId || it.id || it._id || '';
       return '<div class="sched-item"><div class="sched-time">' + esc(fmtTimeRange(it.startTime, it.endTime)) + '<small>' + esc(kindLabel(k)) + '</small></div>'
         + '<div class="sched-body"><b>' + esc(it.title) + '</b><span class="' + badgeCls + '">' + esc(kindLabel(k) + repText + shareText) + '</span></div>'
-        + (canDelete ? '<button type="button" class="icon" data-del-sched="' + esc(it.id) + '" aria-label="Remove item">✕</button>' : '') + '</div>';
+        + '<button type="button" class="icon" data-del-sched="' + esc(itemKey) + '" aria-label="Remove item">✕</button></div>';
     }).join('');
   }
 }
@@ -998,11 +1017,39 @@ if ($('autoArrangeBtn')) {
 
 function handleDeleteSchedule(e){
   var btn = e.target.closest('[data-del-sched]');
-  if (!btn) return;
-  var id = btn.dataset.delSched;
-  S.calSchedule = S.calSchedule.filter(function(x){ return x.id !== id && x.clientId !== id; });
-  save();
-  renderCalendar();
+  if (btn) {
+    var id = btn.dataset.delSched;
+    var removed = (S.calSchedule || []).find(function(x){
+      return x.id === id || x.clientId === id || x._id === id;
+    }) || (S.sharedItems || []).find(function(x){
+      return x.id === id || x.clientId === id || x._id === id;
+    });
+    if (removed) {
+      lastDeletedCalItem = Object.assign({}, removed);
+      S.dismissedCalIds = Array.from(new Set([...(S.dismissedCalIds || []), ...itemKeys(removed), String(id)]));
+    } else if (id) {
+      S.dismissedCalIds = Array.from(new Set([...(S.dismissedCalIds || []), String(id)]));
+    }
+    S.calSchedule = (S.calSchedule || []).filter(function(x){
+      return x.id !== id && x.clientId !== id && x._id !== id;
+    });
+    S.sharedItems = (S.sharedItems || []).filter(function(x){
+      return x.id !== id && x.clientId !== id && x._id !== id;
+    });
+    save();
+    renderCalendar();
+    return;
+  }
+
+  var undoBtn = e.target.closest('[data-undo-sched]');
+  if (undoBtn && lastDeletedCalItem) {
+    var restoreKeys = new Set(itemKeys(lastDeletedCalItem));
+    S.dismissedCalIds = (S.dismissedCalIds || []).filter(function(k){ return !restoreKeys.has(String(k)); });
+    S.calSchedule.push(Object.assign({}, lastDeletedCalItem, { source: 'local' }));
+    lastDeletedCalItem = null;
+    save();
+    renderCalendar();
+  }
 }
 
 if ($('selectedDateMarks')) {
