@@ -22,7 +22,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 'MyFont',Nunito,system-ui,sans-serif}
-main{max-width:740px;margin:0 auto;padding:20px 14px 64px}
+main{max-width:740px;margin:0 auto;padding:20px 14px 88px}
 header{position:relative;display:flex;align-items:center;gap:12px}
 .logo{width:60px;height:60px;border-radius:16px;background:var(--card);display:grid;place-items:center;font-size:28px;overflow:hidden;flex:none}
 .logo img{width:100%;height:100%;object-fit:contain}
@@ -116,6 +116,13 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 .notif-item{padding:8px 0;border-top:1px solid var(--line);font-size:14px}
 .notif-item:first-child{border-top:0}
 .sync-status{font-size:12px;color:var(--mute)}
+.chat-fab{position:fixed;right:18px;bottom:20px;width:54px;height:54px;border-radius:50%;background:var(--btn);color:var(--btntxt);font-size:24px;display:grid;place-items:center;box-shadow:0 10px 24px rgba(0,0,0,.32);z-index:18}
+.chat-drawer{display:none;position:fixed;right:18px;bottom:84px;width:min(350px,calc(100vw - 28px));max-height:420px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px;box-shadow:0 14px 32px rgba(0,0,0,.42);z-index:19;flex-direction:column;gap:8px}
+.chat-drawer.open{display:flex}
+.chat-msgs{flex:1;min-height:170px;max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.chat-bubble{max-width:82%;padding:8px 11px;border-radius:14px;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.chat-bubble.me{align-self:flex-end;background:var(--pinkbg);color:var(--ink);border:1px solid var(--pink)}
+.chat-bubble.them{align-self:flex-start;background:var(--card);color:var(--ink);border:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -124,12 +131,12 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
   <div class="logo" id="logo">⏰</div>
   <h1 id="appName" style="flex:1">Reyan’s Tiem Manager</h1>
   <div class="top-actions">
-    <button class="cal-btn" id="bellBtn" aria-label="Notifications" aria-expanded="false">🔔 <span id="bellCount">0</span></button>
-    <button class="cal-btn" id="viewSwitchBtn" aria-label="Switch to Calendar">Calendar</button>
+    <button type="button" class="cal-btn" id="bellBtn" aria-label="Notifications" aria-expanded="false">🔔 <span id="bellCount">0</span></button>
+    <button type="button" class="cal-btn" id="viewSwitchBtn" aria-label="Switch to Calendar">Calendar</button>
     <div class="bell-popover" id="bellPopover" role="region" aria-label="Friend requests and notifications">
       <div class="bell-popover-head">
         <span>Notifications</span>
-        <button class="ghost small" id="bellRefreshBtn" type="button">Refresh</button>
+        <button type="button" class="ghost small" id="bellRefreshBtn">Refresh</button>
       </div>
       <div id="notifBox"></div>
     </div>
@@ -154,7 +161,7 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <div class="row" style="margin-top:10px">
 <label class="chk"><input type="checkbox" id="fAlarm" checked> Alarm</label>
 <label class="chk"><input type="checkbox" id="fRepeat" checked> Repeat daily</label>
-<button id="add" style="margin-left:auto">Add to schedule</button>
+<button type="button" id="add" style="margin-left:auto">Add to schedule</button>
 </div>
 </div>
 
@@ -167,13 +174,13 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <div class="row"><label>Snooze minutes <input type="number" id="sSnooze" min="1" max="60" style="width:80px"></label></div>
 <div class="row"><label>Heads-up before alarm (minutes, 0 = off) <input type="number" id="sLead" min="0" max="60" style="width:80px"></label></div>
 <div class="row">
-<button class="ghost" id="perm">Turn on alarms + notifications</button>
-<button class="ghost" id="test">Test alarm</button>
+<button type="button" class="ghost" id="perm">Turn on alarms + notifications</button>
+<button type="button" class="ghost" id="test">Test alarm</button>
 </div>
 <p class="date" style="margin-top:12px">Alarms and morning/bedtime/meal nudges work while this page is open in a tab, on your Home Screen, or via notifications when allowed. Keep the sound on.</p>
 </details>
 <div class="bottom-install" id="bottomInstallWrap">
-<button class="ghost" id="bottomInstallBtn" style="width:100%">Install App</button>
+<button type="button" class="ghost" id="bottomInstallBtn" style="width:100%">Install App</button>
 </div>
 </section>
 
@@ -181,9 +188,9 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <div class="card cal-card-art" id="calCard" style="margin-top:16px">
 <div class="cal-art-banner" id="calArtBanner"><img id="calArtImg" alt="Drawn calendar artwork"></div>
 <div class="cal-head">
-<button class="ghost" id="prevMonth" aria-label="Previous month">‹</button>
+<button type="button" class="ghost" id="prevMonth" aria-label="Previous month">‹</button>
 <h2 class="cal-title" id="calMonthLabel">Month</h2>
-<button class="ghost" id="nextMonth" aria-label="Next month">›</button>
+<button type="button" class="ghost" id="nextMonth" aria-label="Next month">›</button>
 </div>
 <div class="cal-grid" id="calGrid"></div>
 <p class="date" style="margin:10px 0 0;font-size:12px">Tap any date to see its schedule · Swipe right to go back to tiem manager</p>
@@ -209,14 +216,14 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <option value="weekly">Every week on this day</option>
 </select>
 <label class="chk" style="color:var(--ink)"><input type="checkbox" id="calShared"> Share with friends</label>
-<button id="saveCalItemBtn" style="margin-left:auto">Add &amp; arrange</button>
+<button type="button" id="saveCalItemBtn" style="margin-left:auto">Add &amp; arrange</button>
 </div>
 </div>
 
 <div class="card">
 <div class="cal-head" style="margin-bottom:8px">
 <h3 id="selectedDateTitle" style="margin:0;font:600 18px 'MyFont',Fredoka,sans-serif">Day Schedule</h3>
-<button class="ghost" id="autoArrangeBtn" style="padding:6px 12px;font-size:13px">Auto-arrange time</button>
+<button type="button" class="ghost" id="autoArrangeBtn" style="padding:6px 12px;font-size:13px">Auto-arrange time</button>
 </div>
 <div id="selectedDateMarks"></div>
 </div>
@@ -224,16 +231,16 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <div class="card" id="friendsCard">
 <div class="cal-head" style="margin-bottom:8px">
 <h3 style="margin:0;font:600 18px 'MyFont',Fredoka,sans-serif">Friends &amp; Sync</h3>
-<button class="ghost small" id="syncNowBtn">Sync now</button>
+<button type="button" class="ghost small" id="syncNowBtn">Sync now</button>
 </div>
 <div class="row">
 <input type="text" id="myUsernameInput" placeholder="Your username (e.g. reyan)" maxlength="32">
 <input type="color" id="myColorInput" value="#ff9ec4" aria-label="Your color">
-<button class="small" id="saveProfileBtn">Save profile</button>
+<button type="button" class="small" id="saveProfileBtn">Save profile</button>
 </div>
 <div class="row" style="margin-top:8px">
 <input type="text" id="friendHandleInput" placeholder="Friend username to add (e.g. ara_26)" maxlength="32">
-<button class="ghost small" id="sendFriendReqBtn">Send request</button>
+<button type="button" class="ghost small" id="sendFriendReqBtn">Send request</button>
 </div>
 <div class="sync-status" id="syncStatus" style="margin-top:8px">Not synced yet</div>
 <div id="friendsList" style="margin-top:8px"></div>
@@ -241,12 +248,25 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 </section>
 </div>
 </div>
+
+<button type="button" class="chat-fab" id="chatFabBtn" aria-label="Open friend chat">💬</button>
+<div class="chat-drawer" id="chatDrawer" role="dialog" aria-label="Friend chat">
+  <div class="row" style="justify-content:space-between">
+    <select class="mark-type" id="chatFriendSelect" aria-label="Select friend" style="flex:1"></select>
+    <button type="button" class="ghost small" id="chatCloseBtn" aria-label="Close chat">✕</button>
+  </div>
+  <div class="chat-msgs" id="chatMessages"><div class="empty">Select a friend to start chatting.</div></div>
+  <div class="row">
+    <input type="text" id="chatInput" placeholder="Type a message..." maxlength="500">
+    <button type="button" class="small" id="chatSendBtn">Send</button>
+  </div>
+</div>
 </main>
 
 <div id="ring" role="alertdialog" aria-live="assertive"><div class="box">
 <div class="logo" id="ringLogo">⏰</div>
 <h2 id="ringText"></h2><p id="ringNote" class="date"></p>
-<div class="row" style="justify-content:center"><button id="snooze" class="ghost">Snooze</button><button id="ringDone">Done</button></div>
+<div class="row" style="justify-content:center"><button type="button" id="snooze" class="ghost">Snooze</button><button type="button" id="ringDone">Done</button></div>
 </div></div>
 
 <script>
@@ -256,176 +276,4 @@ var CONVEX_SITE_URL='https://adventurous-caterpillar-502.ap-southeast-2.convex.s
 /* OWNER-ONLY DESIGN: name, logo and alarm sound are set here by the owner. Users cannot change them. */
 var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./clock.png',calBg:'./cal-bg.png',sound:''};
 var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5,username:'',color:'#ff9ec4',friends:[],pendingRequests:[],notifications:[],sharedItems:[]};
-try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
-if(S.name==='Tiny Tiem')S.name='Reyan’s Tiem Manager';
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){alert('Could not save. Try a smaller logo or sound file.')}}
-var $=function(i){return document.getElementById(i)};
-function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function cleanHandle(u){return String(u||'').trim().toLowerCase().replace(/^@+/,'').replace(/[^a-z0-9_.-]/g,'')}
-function pad(n){return n<10?'0'+n:''+n}
-function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:TZ}).format(d)}
-function hm(d){return new Intl.DateTimeFormat('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d)}
-function fmt(hmStr){
-  if(!hmStr||!/^\d{2}:\d{2}$/.test(hmStr))return hmStr||'';
-  var p=hmStr.split(':'),d=new Date();d.setHours(+p[0],+p[1],0,0);
-  return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-}
-function isDone(t){if(!t.doneAt)return false;return t.repeat?dayKey(new Date(t.doneAt))===dayKey(new Date()):true}
-
-function applyBrand(){
-$('appName').textContent=BRAND.name;document.title=BRAND.name;
-var h=BRAND.logo?'<img alt="" src="'+BRAND.logo+'">':'⏰';
-var c=BRAND.clock?'<img alt="" src="'+BRAND.clock+'">':h;
-$('logo').innerHTML=h;$('ringLogo').innerHTML=c;
-}
-
-function render(){
-var ts=S.tasks.slice().sort(function(a,b){return a.tiem<b.tiem?-1:1});
-if(!ts.length){$('list').innerHTML='<div class="empty">Nothing scheduled yet. Add your first tiem above.</div>'}
-else $('list').innerHTML=ts.map(function(t){
-var d=isDone(t);
-return '<div class="task'+(d?' done':'')+'"><div class="t">'+fmt(t.tiem)+'<small>'+(t.alarm?'alarm on':'no alarm')+(t.repeat?' · daily':'')+'</small></div>'
-+'<div class="body"><b>'+esc(t.text)+'</b>'+(t.note?'<p>'+esc(t.note)+'</p>':'')
-+(d?'<span class="stamp">done '+new Date(t.doneAt).toLocaleString([],{timeZone:TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+'</span>':'')+'</div>'
-+'<button class="ghost" data-a="done" data-id="'+t.id+'">'+(d?'Undo':'Done')+'</button>'
-+'<button class="icon" data-a="del" data-id="'+t.id+'" aria-label="Delete">✕</button></div>'}).join('');
-tickNext();
-}
-
-function tickNext(){
-var now=new Date(),cur=hm(now);
-var up=S.tasks.filter(function(t){return !isDone(t)&&t.tiem>=cur}).sort(function(a,b){return a.tiem<b.tiem?-1:1})[0];
-$('next').innerHTML=up?'Up next at <b>'+fmt(up.tiem)+'</b>: '+esc(up.text):'Nothing left for today. Rest up.';
-}
-
-$('list').addEventListener('click',function(e){
-var b=e.target.closest('button');if(!b)return;
-var t=S.tasks.find(function(x){return x.id===b.dataset.id});
-if(b.dataset.a==='del')S.tasks=S.tasks.filter(function(x){return x.id!==b.dataset.id});
-else if(t)t.doneAt=isDone(t)?null:new Date().toISOString();
-save();render();
-});
-
-$('add').onclick=function(){
-var text=$('fText').value.trim();if(!text||!$('fTime').value){$('fText').focus();return}
-S.tasks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),tiem:$('fTime').value,text:text,note:$('fNote').value.trim(),alarm:$('fAlarm').checked,repeat:$('fRepeat').checked,fired:'',snoozeUntil:0,doneAt:null});
-$('fText').value='';$('fNote').value='';save();render();
-};
-
-/* ---- alarm ---- */
-var ac,beepTimer,vibTimer,audio,queue=[],ringing=null;
-function unlock(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume()}catch(e){}}
-function playNotes(notes,wave,dur){
-if(!ac)return;
-notes.forEach(function(n){
-var s=ac.createOscillator(),g=ac.createGain();
-s.type=wave||'sine';
-s.frequency.value=n[0];
-var t0=ac.currentTime+n[1];
-var d=n[2]||dur||0.28;
-g.gain.setValueAtTime(0.0001,t0);
-g.gain.exponentialRampToValueAtTime(0.45,t0+0.02);
-g.gain.exponentialRampToValueAtTime(0.0001,t0+d);
-s.connect(g);g.connect(ac.destination);
-s.start(t0);s.stop(t0+d+0.02);
-});
-}
-function beep(){
-var tone=S.tone||'chime';
-if(tone==='bell'){
-playNotes([[659.25,0,0.45],[880,0.35,0.55],[1318.5,0.75,0.7]],'sine',0.5);
-}else if(tone==='marimba'){
-playNotes([[523.25,0,0.22],[659.25,0.2,0.22],[783.99,0.4,0.22],[1046.5,0.6,0.35]],'triangle',0.25);
-}else if(tone==='classic'){
-playNotes([[880,0,0.18],[880,0.25,0.18],[880,0.5,0.18]],'sine',0.18);
-}else{
-playNotes([[587.33,0,0.32],[739.99,0.28,0.32],[880,0.56,0.36],[1174.66,0.86,0.5]],'sine',0.35);
-}
-}
-function startSound(){stopSound();
-var src=(S.tone==='custom'&&S.customSound)?S.customSound:BRAND.sound;
-if(src){
-audio=new Audio(src);audio.loop=true;
-audio.play().catch(function(){beep();beepTimer=setInterval(beep,1800)});
-}else{
-beep();beepTimer=setInterval(beep,1800);
-}
-if(navigator.vibrate){
-navigator.vibrate([400,200,400]);
-vibTimer=setInterval(function(){if(ringing&&navigator.vibrate)navigator.vibrate([400,200,400])},2000);
-}
-}
-function stopSound(){
-clearInterval(beepTimer);clearInterval(vibTimer);
-if(audio){audio.pause();audio.currentTime=0;audio=null}
-if(navigator.vibrate)navigator.vibrate(0);
-}
-document.addEventListener('visibilitychange',function(){
-  if(ringing && document.visibilityState==='visible'){
-    unlock();
-    if(audio && audio.paused){audio.play().catch(function(){});}
-    else if(!audio && !beepTimer){startSound();}
-  }
-});
-
-function ring(t){
-queue.push(t);if(!ringing)next();
-}
-function dismissActiveAlarm(mode){
-  if(!ringing)return;
-  var current=ringing;
-  stopSound();
-  if(current.id!=='test'){
-    if(mode==='snooze'){
-      current.snoozeUntil=Date.now()+S.snooze*60000;
-    } else {
-      current.doneAt=new Date().toISOString();
-      current.snoozeUntil=0;
-    }
-    save();
-    render();
-  }
-  ringing=null;
-  next();
-}
-
-function showAlarmNotification(alarmObj){
-  if(!('Notification' in window) || Notification.permission!=='granted')return;
-  var title=alarmObj.text || 'Alarm';
-  var body=(alarmObj.note || ('It’s '+fmt(alarmObj.tiem)+'.'));
-  var opts={
-    body:body,
-    icon:'./logo.png',
-    badge:'./logo.png',
-    tag:'tiem-alarm-'+(alarmObj.id||'now'),
-    renotify:true,
-    requireInteraction:true,
-    vibrate:[400,200,400,200,400],
-    data:{alarmId:alarmObj.id||'test',tiem:alarmObj.tiem||'00:00'},
-    actions:[
-      {action:'stop',title:'End Alarm'},
-      {action:'snooze',title:'Snooze'}
-    ]
-  };
-  if(navigator.serviceWorker && navigator.serviceWorker.ready){
-    navigator.serviceWorker.ready.then(function(reg){
-      if(reg && reg.showNotification){
-        return reg.showNotification(title, opts);
-      }
-      try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
-    }).catch(function(){
-      try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
-    });
-  } else {
-    try{new Notification(title,{body:body,icon:'./logo.png',vibrate:[400,200,400]});}catch(e){}
-  }
-}
-
-function next(){
-ringing=queue.shift();
-if(!ringing){$('ring').classList.remove('on');return}
-$('ringText').textContent=ringing.text;$('ringNote').textContent=ringing.note||'It’s '+fmt(ringing.tiem)+'.';
-$('ring').classList.add('on');startSound();
-showAlarmNotification(ringing);
-}
-$('ringDone').onclick=function(){dismissActiveAlarm('done')};$('snooze').onclick=function(){dismissActiveAlarm('snooze
+try{var
