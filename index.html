@@ -33,11 +33,13 @@ h1{font:600 24px 'MyFont',Fredoka,sans-serif;margin:0}
 .card{background:var(--card);border-radius:20px;padding:16px;margin-bottom:16px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 input[type=time],input[type=text],input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:9px 12px;min-width:0}
+input[type=color]{border:2px solid var(--line);border-radius:10px;background:var(--bg);width:44px;height:38px;padding:2px;cursor:pointer}
 input[type=text]{flex:1 1 160px}
-input:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+input:focus-visible,button:focus-visible,summary:focus-visible,select:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
 label.chk{display:flex;gap:6px;align-items:center;color:var(--mute);font-size:14px}
 button{font:600 15px 'MyFont',Nunito,sans-serif;border:0;border-radius:12px;padding:10px 16px;background:var(--btn);color:var(--btntxt);cursor:pointer}
 button.ghost{background:var(--bg);color:var(--ink)}
+button.small{padding:6px 11px;font-size:13px;border-radius:10px}
 .task{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
 .task:first-child{border-top:0}
 .t{font:600 20px 'MyFont',Fredoka,sans-serif;min-width:92px}
@@ -58,12 +60,6 @@ details .row{margin-top:12px}
 #ring h2{font:600 28px 'MyFont',Fredoka,sans-serif;margin:0 0 6px;overflow-wrap:anywhere}
 @keyframes wob{50%{transform:rotate(-8deg) scale(1.06)}}
 @media (prefers-reduced-motion:reduce){#ring .logo{animation:none}}
-.gentle{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 16px;margin-bottom:16px}
-.gentle h3{margin:0 0 4px;font:600 16px 'MyFont',Fredoka,sans-serif;color:var(--pink)}
-.gentle p{margin:0;color:var(--mute);font-size:14px}
-.pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.pill{background:var(--pinkbg);color:var(--ink);border-radius:12px;padding:8px 12px;font-size:13px;flex:1 1 140px}
-.pill small{display:block;color:var(--mute);font-size:12px}
 .top-actions{display:flex;gap:8px;align-items:center}
 .cal-btn{background:var(--pinkbg);color:var(--pink);border:1px solid var(--line);padding:8px 12px;border-radius:12px;font:600 13px 'MyFont',Nunito,sans-serif;cursor:pointer;white-space:nowrap}
 .pager{overflow:hidden;width:100%}
@@ -88,13 +84,13 @@ details .row{margin-top:12px}
 .cal-chip.type-event{border-left-color:#ff9ec4}
 .cal-chip.type-monthsary{border-left-color:#ff7aa8}
 .cal-chip.type-anniversary{border-left-color:#c8b6ff}
-.badge-monthsary{background:#3b1e30;color:#ff9ec4}
-.badge-anniversary{background:#2a1f3d;color:#d6c8ff}
 .cal-chip-time{display:block;font-size:10px;color:var(--mute);font-family:ui-monospace,Menlo,monospace}
 .mark-badge{display:inline-block;font-size:12px;padding:3px 9px;border-radius:999px;background:var(--pinkbg);color:var(--ink);margin-right:6px}
 .badge-event{background:#3b1e30;color:#ff9ec4}
 .badge-task{background:#182d38;color:#7bdff2}
 .badge-appointment{background:#362c18;color:#ffd166}
+.badge-monthsary{background:#3b1e30;color:#ff9ec4}
+.badge-anniversary{background:#2a1f3d;color:#d6c8ff}
 :root[data-theme="light"] .badge-event{background:#ffe4ef;color:#a8245a}
 :root[data-theme="light"] .badge-task{background:#dff6fc;color:#145c73}
 :root[data-theme="light"] .badge-appointment{background:#fff2cc;color:#7a5200}
@@ -112,11 +108,25 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 .sched-body{flex:1;min-width:0}
 .sched-body b{display:block;font-size:16px;line-height:1.35;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
 .bottom-install{margin-top:16px}
+.friend-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13px;margin:4px 6px 0 0}
+.friend-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.notif-box{margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--bg);border:1px solid var(--line)}
+.notif-item{padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.notif-item:first-child{border-top:0}
+.sync-status{font-size:12px;color:var(--mute)}
 </style>
 </head>
 <body>
 <main>
-<header><div class="logo" id="logo">⏰</div><h1 id="appName" style="flex:1">Reyan’s Tiem Manager</h1><div class="top-actions"><button class="cal-btn" id="viewSwitchBtn" aria-label="Switch to Calendar">Calendar</button></div></header>
+<header>
+  <div class="logo" id="logo">⏰</div>
+  <h1 id="appName" style="flex:1">Reyan’s Tiem Manager</h1>
+  <div class="top-actions">
+    <button class="cal-btn" id="bellBtn" aria-label="Notifications">🔔 <span id="bellCount">0</span></button>
+    <button class="cal-btn" id="viewSwitchBtn" aria-label="Switch to Calendar">Calendar</button>
+  </div>
+</header>
+
 <div class="pager" id="pager">
 <div class="pager-track" id="pagerTrack">
 <section class="page" id="tiemPage" aria-label="Tiem Manager">
@@ -143,9 +153,6 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 
 <details class="card">
 <summary>Alarm settings</summary>
-
-
-
 <div class="row"><label>Ringtone <select class="mark-type" id="sTone" aria-label="Ringtone"><option value="chime">Soft Music Box</option><option value="bell">Gentle Bell</option><option value="marimba">Cozy Marimba</option><option value="classic">Classic Beep</option><option value="custom">Custom Audio File</option></select></label></div>
 <div class="row" id="customToneRow" style="display:none"><label>Upload ringtone (.mp3/.wav) <input type="file" id="sToneFile" accept="audio/*"></label></div>
 <div class="row"><label>Snooze minutes <input type="number" id="sSnooze" min="1" max="60" style="width:80px"></label></div>
@@ -153,7 +160,6 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <div class="row">
 <button class="ghost" id="perm">Turn on alarms + notifications</button>
 <button class="ghost" id="test">Test alarm</button>
-
 </div>
 <p class="date" style="margin-top:12px">Alarms and morning/bedtime/meal nudges work while this page is open in a tab, on your Home Screen, or via notifications when allowed. Keep the sound on.</p>
 </details>
@@ -193,6 +199,7 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <option value="date">This selected date</option>
 <option value="weekly">Every week on this day</option>
 </select>
+<label class="chk" style="color:var(--ink)"><input type="checkbox" id="calShared"> Share with friends</label>
 <button id="saveCalItemBtn" style="margin-left:auto">Add &amp; arrange</button>
 </div>
 </div>
@@ -203,6 +210,25 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <button class="ghost" id="autoArrangeBtn" style="padding:6px 12px;font-size:13px">Auto-arrange time</button>
 </div>
 <div id="selectedDateMarks"></div>
+</div>
+
+<div class="card" id="friendsCard">
+<div class="cal-head" style="margin-bottom:8px">
+<h3 style="margin:0;font:600 18px 'MyFont',Fredoka,sans-serif">Friends &amp; Sync</h3>
+<button class="ghost small" id="syncNowBtn">Sync now</button>
+</div>
+<div class="row">
+<input type="text" id="myUsernameInput" placeholder="Your username (e.g. reyan)" maxlength="32">
+<input type="color" id="myColorInput" value="#ff9ec4" aria-label="Your color">
+<button class="small" id="saveProfileBtn">Save profile</button>
+</div>
+<div class="row" style="margin-top:8px">
+<input type="text" id="friendHandleInput" placeholder="Friend username to add (e.g. ara_26)" maxlength="32">
+<button class="ghost small" id="sendFriendReqBtn">Send request</button>
+</div>
+<div class="sync-status" id="syncStatus" style="margin-top:8px">Not synced yet</div>
+<div id="friendsList" style="margin-top:8px"></div>
+<div class="notif-box" id="notifBox" style="display:none"></div>
 </div>
 </section>
 </div>
@@ -218,18 +244,24 @@ select.mark-type{font:inherit;color:var(--ink);background:var(--bg);border:2px s
 <script>
 var KEY='tinytime.v1';
 var TZ='Asia/Manila';
+var CONVEX_SITE_URL='https://adventurous-caterpillar-502.ap-southeast-2.convex.site';
 /* OWNER-ONLY DESIGN: name, logo and alarm sound are set here by the owner. Users cannot change them. */
 var BRAND={name:'Reyan’s Tiem Manager',logo:'./logo.png',clock:'./clock.png',calBg:'./cal-bg.png',sound:''};
-var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5};
+var S={tasks:[],name:'Reyan’s Tiem Manager',logo:'',sound:'',snooze:5,lead:5,username:'',color:'#ff9ec4',friends:[],pendingRequests:[],notifications:[],sharedItems:[]};
 try{var raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
 if(S.name==='Tiny Tiem')S.name='Reyan’s Tiem Manager';
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){alert('Could not save. Try a smaller logo or sound file.')}}
 var $=function(i){return document.getElementById(i)};
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function cleanHandle(u){return String(u||'').trim().toLowerCase().replace(/^@+/,'').replace(/[^a-z0-9_.-]/g,'')}
 function pad(n){return n<10?'0'+n:''+n}
 function dayKey(d){return new Intl.DateTimeFormat('en-CA',{timeZone:TZ}).format(d)}
 function hm(d){return new Intl.DateTimeFormat('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d)}
-function fmt(hm){var p=hm.split(':'),d=new Date();d.setHours(+p[0],+p[1],0,0);return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+function fmt(hmStr){
+  if(!hmStr||!/^\d{2}:\d{2}$/.test(hmStr))return hmStr||'';
+  var p=hmStr.split(':'),d=new Date();d.setHours(+p[0],+p[1],0,0);
+  return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+}
 function isDone(t){if(!t.doneAt)return false;return t.repeat?dayKey(new Date(t.doneAt))===dayKey(new Date()):true}
 
 function applyBrand(){
@@ -501,7 +533,6 @@ $('perm').onclick=function(){unlock();beep();try{if('Notification' in window)Not
 $('test').onclick=function(){unlock();ring({id:'test',text:'Test alarm',note:'This is what your reminder will look like.',tiem:'00:00'})};
 document.addEventListener('click',unlock,{once:true});
 
-
 var SURPRISE_ALL_DONE=[
   'you finished every single tiem on today’s list—so proud of you! taek a deep breath, rest, nd doomscroll na bozz',
   'all scheduled tiems complete! u showed up for urself today, nd that deserves ril rest. mwa',
@@ -610,13 +641,15 @@ function migrateLegacyCalData(){
         var kind = (mk.type === 'task') ? 'task' : (mk.type === 'appointment') ? 'appointment' : 'event';
         S.calSchedule.push({
           id: 'm_' + iso + '_' + Math.random().toString(36).slice(2,7),
-          title: autoCorrectCalText(mk.label || mk.type || 'Schedule item'),
+          title: String(mk.label || mk.type || 'Schedule item'),
           kind: kind,
           startTime: '09:00',
           endTime: '',
           repeat: 'date',
           date: iso,
-          dow: new Date(iso + 'T12:00:00').getDay()
+          dow: new Date(iso + 'T12:00:00').getDay(),
+          shared: false,
+          author: S.username || ''
         });
         migrated = true;
       });
@@ -634,7 +667,9 @@ function migrateLegacyCalData(){
           endTime: '',
           repeat: 'weekly',
           date: '',
-          dow: +k
+          dow: +k,
+          shared: false,
+          author: S.username || ''
         });
         migrated = true;
       });
@@ -668,10 +703,28 @@ function sortScheduleItems(items){
   });
 }
 
+function getAllCombinedCalendarItems(){
+  var localItems = (S.calSchedule || []).map(function(it){ return Object.assign({source:'local'}, it); });
+  var remoteItems = (S.sharedItems || []).map(function(it){
+    return Object.assign({
+      id: 'srv_' + (it.clientId || it._id || Math.random().toString(36).slice(2,7)),
+      source: 'shared'
+    }, it);
+  });
+  var byKey = new Map();
+  localItems.forEach(function(it){ byKey.set(it.clientId || it.id, it); });
+  remoteItems.forEach(function(it){
+    var k = it.clientId || it.id;
+    if (!byKey.has(k)) byKey.set(k, it);
+  });
+  return Array.from(byKey.values());
+}
+
 function getItemsForDate(iso){
   var parts = iso.split('-');
   var dow = new Date(+parts[0], (+parts[1]) - 1, +parts[2]).getDay();
-  var matching = S.calSchedule.filter(function(item){
+  var combined = getAllCombinedCalendarItems();
+  var matching = combined.filter(function(item){
     if (item.repeat === 'weekly') return +item.dow === dow;
     return item.date === iso;
   });
@@ -847,32 +900,17 @@ function renderSelectedMarks(){
       var k = it.kind || 'event';
       var badgeCls = 'mark-badge badge-' + k;
       var repText = it.repeat === 'weekly' ? ' · Every ' + dayNames[selDow] : ' · One-time';
+      var shareText = it.shared ? (' · Shared by @' + (it.author || 'friend')) : '';
+      var canDelete = it.source !== 'shared';
       return '<div class="sched-item"><div class="sched-time">' + esc(fmtTimeRange(it.startTime, it.endTime)) + '<small>' + esc(kindLabel(k)) + '</small></div>'
-        + '<div class="sched-body"><b>' + esc(it.title) + '</b><span class="' + badgeCls + '">' + esc(kindLabel(k) + repText) + '</span></div>'
-        + '<button class="icon" data-del-sched="' + esc(it.id) + '" aria-label="Remove item">✕</button></div>';
+        + '<div class="sched-body"><b>' + esc(it.title) + '</b><span class="' + badgeCls + '">' + esc(kindLabel(k) + repText + shareText) + '</span></div>'
+        + (canDelete ? '<button class="icon" data-del-sched="' + esc(it.id) + '" aria-label="Remove item">✕</button>' : '') + '</div>';
     }).join('');
   }
 }
 
-function renderWeeklyLabels(){
-  var box = $('weeklyLabelsList');
-  if (!box) return;
-  var items = sortScheduleItems(S.calSchedule);
-  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  if (!items.length) {
-    box.innerHTML = '<div class="empty" style="padding:10px">No schedule items saved yet.</div>';
-    return;
-  }
-  box.innerHTML = items.map(function(it){
-    var whenTxt = it.repeat === 'weekly' ? ('Every ' + dayNames[+it.dow || 0]) : (it.date || '');
-    return '<div class="sched-item"><div class="sched-time">' + esc(fmtTimeRange(it.startTime, it.endTime)) + '<small>' + esc(whenTxt) + '</small></div>'
-      + '<div class="sched-body"><b>' + esc(it.title) + '</b><span class="mark-badge badge-' + esc(it.kind || 'event') + '">' + esc(kindLabel(it.kind)) + '</span></div>'
-      + '<button class="icon" data-del-sched="' + esc(it.id) + '" aria-label="Delete item">✕</button></div>';
-  }).join('');
-}
-
 if ($('saveCalItemBtn')) {
-  $('saveCalItemBtn').onclick = function(){
+  $('saveCalItemBtn').onclick = async function(){
     var titleEl = $('calTitle');
     var title = titleEl ? titleEl.value.trim() : '';
     if (!title) { if (titleEl) titleEl.focus(); return; }
@@ -880,23 +918,45 @@ if ($('saveCalItemBtn')) {
     var startTime = $('calStartTime') ? $('calStartTime').value : '';
     var endTime = $('calEndTime') ? $('calEndTime').value : '';
     var repeatMode = $('calRepeatMode') ? $('calRepeatMode').value : 'date';
+    var shared = $('calShared') ? !!$('calShared').checked : false;
     var parts = selectedIso.split('-');
     var selDow = new Date(+parts[0], (+parts[1]) - 1, +parts[2]).getDay();
+    var clientId = 'evt_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+    var author = cleanHandle(S.username) || 'user';
 
     S.calSchedule.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      id: clientId,
+      clientId: clientId,
       title: title,
       kind: kind,
       startTime: startTime,
       endTime: endTime,
       repeat: repeatMode,
       date: selectedIso,
-      dow: selDow
+      dow: selDow,
+      shared: shared,
+      author: author
     });
     S.calSchedule = sortScheduleItems(S.calSchedule);
     if (titleEl) titleEl.value = '';
     save();
     renderCalendar();
+
+    if (shared && cleanHandle(S.username)) {
+      await convexPost('/api/calendar-item', {
+        clientId: clientId,
+        title: title,
+        kind: kind,
+        startTime: startTime,
+        endTime: endTime,
+        repeat: repeatMode,
+        date: selectedIso,
+        dow: selDow,
+        shared: true,
+        author: cleanHandle(S.username)
+      });
+      await convexSyncUser(S.username);
+    }
   };
 }
 
@@ -912,16 +972,13 @@ function handleDeleteSchedule(e){
   var btn = e.target.closest('[data-del-sched]');
   if (!btn) return;
   var id = btn.dataset.delSched;
-  S.calSchedule = S.calSchedule.filter(function(x){ return x.id !== id; });
+  S.calSchedule = S.calSchedule.filter(function(x){ return x.id !== id && x.clientId !== id; });
   save();
   renderCalendar();
 }
 
 if ($('selectedDateMarks')) {
   $('selectedDateMarks').addEventListener('click', handleDeleteSchedule);
-}
-if ($('weeklyLabelsList')) {
-  $('weeklyLabelsList').addEventListener('click', handleDeleteSchedule);
 }
 
 if ($('prevMonth')) {
@@ -941,6 +998,158 @@ if ($('calGrid')) {
   });
 }
 
+/* ---- Convex Social & Calendar Sync ---- */
+async function convexPost(path, payload) {
+  try {
+    const res = await fetch(`${CONVEX_SITE_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload || {}),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Convex POST error:", path, err);
+    return { ok: false, error: "Network error reaching Convex" };
+  }
+}
+
+function renderSocialUI(){
+  if ($('myUsernameInput') && document.activeElement !== $('myUsernameInput')) {
+    $('myUsernameInput').value = S.username || '';
+  }
+  if ($('myColorInput') && S.color) {
+    $('myColorInput').value = S.color;
+  }
+
+  var pending = Array.isArray(S.pendingRequests) ? S.pendingRequests : [];
+  var notifs = Array.isArray(S.notifications) ? S.notifications : [];
+  var unreadCount = pending.length + notifs.filter(function(n){ return !n.read; }).length;
+  if ($('bellCount')) $('bellCount').textContent = String(unreadCount);
+
+  var friends = Array.isArray(S.friends) ? S.friends : [];
+  if ($('friendsList')) {
+    if (!friends.length) {
+      $('friendsList').innerHTML = '<div class="sync-status">No friends connected yet.</div>';
+    } else {
+      $('friendsList').innerHTML = friends.map(function(f){
+        return '<span class="friend-pill"><span class="friend-dot" style="background:' + esc(f.color || '#4cc9f0') + '"></span>@' + esc(f.username) + '</span>';
+      }).join('');
+    }
+  }
+
+  if ($('notifBox')) {
+    if (!pending.length && !notifs.length) {
+      $('notifBox').innerHTML = '<div class="empty" style="padding:6px">No notifications yet.</div>';
+    } else {
+      var reqHtml = pending.map(function(r){
+        return '<div class="notif-item"><b>@' + esc(r.fromUser) + '</b> sent a friend request '
+          + '<button class="small" data-req-id="' + esc(r.id) + '" data-accept="true">Accept</button> '
+          + '<button class="ghost small" data-req-id="' + esc(r.id) + '" data-accept="false">Decline</button></div>';
+      }).join('');
+      var nHtml = notifs.map(function(n){
+        return '<div class="notif-item">' + esc(n.message) + '</div>';
+      }).join('');
+      $('notifBox').innerHTML = reqHtml + nHtml;
+    }
+  }
+}
+
+async function convexSyncUser(username) {
+  const clean = cleanHandle(username || S.username);
+  if (!clean) {
+    if ($('syncStatus')) $('syncStatus').textContent = 'Set a username to sync friends and shared items.';
+    renderSocialUI();
+    return null;
+  }
+  try {
+    const res = await fetch(`${CONVEX_SITE_URL}/api/sync?username=${encodeURIComponent(clean)}`);
+    const data = await res.json();
+    if (data && !data.error) {
+      S.friends = Array.isArray(data.friends) ? data.friends : [];
+      S.pendingRequests = Array.isArray(data.pendingRequests) ? data.pendingRequests : [];
+      S.notifications = Array.isArray(data.notifications) ? data.notifications : [];
+      S.sharedItems = Array.isArray(data.sharedItems) ? data.sharedItems : [];
+      save();
+      renderCalendar();
+      renderSocialUI();
+      if ($('syncStatus')) $('syncStatus').textContent = 'Synced as @' + clean + ' · ' + new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    }
+    return data;
+  } catch (err) {
+    console.error("Convex SYNC error:", err);
+    if ($('syncStatus')) $('syncStatus').textContent = 'Could not reach Convex sync server.';
+    return null;
+  }
+}
+
+if ($('saveProfileBtn')) {
+  $('saveProfileBtn').onclick = async function(){
+    var u = cleanHandle($('myUsernameInput') ? $('myUsernameInput').value : '');
+    var col = $('myColorInput') ? $('myColorInput').value : '#ff9ec4';
+    if (!u) { if ($('myUsernameInput')) $('myUsernameInput').focus(); return; }
+    S.username = u;
+    S.color = col;
+    save();
+    var r = await convexPost('/api/register', { username: u, color: col });
+    if (r && r.ok) {
+      await convexSyncUser(u);
+    } else if ($('syncStatus')) {
+      $('syncStatus').textContent = (r && r.error) || 'Could not save profile.';
+    }
+  };
+}
+
+if ($('sendFriendReqBtn')) {
+  $('sendFriendReqBtn').onclick = async function(){
+    var me = cleanHandle(S.username || ($('myUsernameInput') ? $('myUsernameInput').value : ''));
+    var to = cleanHandle($('friendHandleInput') ? $('friendHandleInput').value : '');
+    if (!me) { alert('Enter and save your username first.'); return; }
+    if (!to) { if ($('friendHandleInput')) $('friendHandleInput').focus(); return; }
+    S.username = me;
+    save();
+    var r = await convexPost('/api/friend-request', { fromUser: me, toUser: to, color: S.color || '#ff9ec4' });
+    if (r && r.ok) {
+      if ($('friendHandleInput')) $('friendHandleInput').value = '';
+      if ($('syncStatus')) $('syncStatus').textContent = 'Friend request sent to @' + to;
+      await convexSyncUser(me);
+    } else if ($('syncStatus')) {
+      $('syncStatus').textContent = (r && r.error) || 'Could not send request.';
+    }
+  };
+}
+
+if ($('notifBox')) {
+  $('notifBox').addEventListener('click', async function(e){
+    var btn = e.target.closest('button[data-req-id]');
+    if (!btn) return;
+    var me = cleanHandle(S.username);
+    var reqId = btn.dataset.reqId;
+    var accept = btn.dataset.accept === 'true';
+    await convexPost('/api/respond-request', { username: me, requestId: reqId, accept: accept });
+    await convexSyncUser(me);
+  });
+}
+
+if ($('bellBtn')) {
+  $('bellBtn').onclick = async function(){
+    setCalView(true);
+    if ($('notifBox')) {
+      $('notifBox').style.display = ($('notifBox').style.display === 'none') ? 'block' : 'none';
+    }
+    if (cleanHandle(S.username)) {
+      await convexSyncUser(S.username);
+    }
+  };
+}
+
+if ($('syncNowBtn')) {
+  $('syncNowBtn').onclick = async function(){
+    var u = cleanHandle($('myUsernameInput') ? $('myUsernameInput').value : S.username);
+    if (u) { S.username = u; save(); }
+    await convexSyncUser(u);
+  };
+}
+
 /* Optional: if you upload a calendar background PNG (e.g. ./cal-bg.png) to GitHub, set BRAND.calBg to './cal-bg.png' */
 if (typeof BRAND !== 'undefined' && BRAND.calBg) {
   var calCardEl = $('calCard');
@@ -954,7 +1163,11 @@ if (typeof BRAND !== 'undefined' && BRAND.calBg) {
   }
 }
 
-applyBrand();render();renderCalendar();check();
+applyBrand();render();renderCalendar();renderSocialUI();check();
+if (cleanHandle(S.username)) {
+  convexSyncUser(S.username);
+  setInterval(function(){ convexSyncUser(S.username); }, 15000);
+}
 
 /* ---- PWA install & offline service worker ---- */
 var deferredPrompt=null;
@@ -998,7 +1211,6 @@ if('serviceWorker' in navigator){
 document.querySelectorAll('input, textarea').forEach(function(el){
   if (el.placeholder) el.placeholder = el.placeholder.replace(/\bcute\s+/gi, '');
 });
-
 </script>
 </body>
 </html>
